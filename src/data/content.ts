@@ -123,7 +123,7 @@ export const RECRUITING_TRACKS: RecruitingTrack[] = [
   },
   {
     track: 'Freshmen + New Transfers',
-    form: 'https://docs.google.com/forms/d/e/1FAIpQLSenMm9FiS4NGRBXWI6dTlI_5OEUe1ncU6dAQPYy-epqic-8Bg/viewform?usp=dialog',
+    form: 'https://docs.google.com/forms/d/e/1FAIpQLSfngx7aJDokCcOTyB0bC0d3i3ksI0pDtv2WCbpz_J5lZ4x-Zw/viewform?usp=dialog',
     formLabel: 'Freshman Application',
     events: [
       { name: 'Info Session', when: 'Sept 16, 5–6 p.m.\nSnee 1150', end: '2026-09-16T18:00:00-04:00', icon: 'interview' },
