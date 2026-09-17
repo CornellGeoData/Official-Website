@@ -49,8 +49,12 @@ export default function WeatherOverlay({ overlay, view, size }: {
       const w = Math.min(size.w, clip.x + clip.w) - x;
       const h = Math.min(size.h, clip.y + clip.h) - y;
       if (w <= 0 || h <= 0) return;
-      // Keep enlarged weather tiles from turning into hard display-pixel squares.
-      ctx.imageSmoothingEnabled = true;
+      // Below native resolution (zoomed out), smooth so many model cells
+      // blending into one screen pixel doesn't alias. Past native resolution
+      // (zoomed in), switch to nearest-neighbor so real grid cells render as
+      // crisp, well-defined blocks instead of a blurred interpolation.
+      const magnification = (full.w / img.naturalWidth) * dpr;
+      ctx.imageSmoothingEnabled = magnification <= 1;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img,
         (x - full.x) / full.w * img.naturalWidth, (y - full.y) / full.h * img.naturalHeight,

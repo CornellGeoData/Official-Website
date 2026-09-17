@@ -4,10 +4,14 @@ import type { MapSite } from './sensorData';
 import { RESIPLE } from '../../styles/theme';
 import { WX_BASE, fetchManifest, readWeatherValues, loadImage, type Frame, type Scale, type WxLayer, type Manifest } from './wxClient';
 
-// Esri's light-gray canvas: keyless like the imagery layer, white enough that
-// conventional weather colors carry all the meaning. Levels stop at 16.
+// CARTO Positron: clean and light like the old gray canvas, but with a real
+// state-boundary line and labels baked in - unlike USGS Topo it carries no
+// terrain shading or dense hydrology labeling, so it doesn't compete with
+// the weather colors. Needs a free key (carto.com/basemaps/apikey) or every
+// tile is watermarked "API KEY REQUIRED"; set VITE_CARTO_KEY in .env.local.
+const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
 const LIGHT_TILES = (z: number, x: number, y: number) =>
-  `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+  `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`;
 
 // Initial position before the selected feed's full grid arrives.
 const INITIAL_SMALL = window.matchMedia('(max-width: 720px)').matches;
@@ -67,8 +71,62 @@ const PANEL: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.25)', color: '#e6ecf0', fontFamily: RESIPLE,
 };
 
+// the "MODEL"/"VARIABLE" caption box is the dropdown trigger, styled exactly
+// like every option box. The current selection sits below it, always
+// visible, in the same style; opening the dropdown adds the *other* options
+// underneath that - the selected box never duplicates into the list.
+function PickerColumn({ label, value, valueId, options, open, onToggle, onPick }: {
+  label: string; value: string; valueId: string;
+  options: { id: string; label: string }[];
+  open: boolean; onToggle: () => void; onPick: (id: string) => void;
+}) {
+  const box = (active: boolean): React.CSSProperties => ({
+    ...PANEL, cursor: 'pointer', padding: '7px 11px', minWidth: 132, minHeight: 34,
+    fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'left',
+    // flex, not block: a <div> box would sit its text on the top padding
+    // while the <button> boxes centre theirs, and the row would look off
+    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center',
+    ...(active ? { background: '#e6ecf0', color: '#0e141c', border: '1px solid #0e141c' } : {}),
+  });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <button onClick={onToggle} aria-expanded={open} style={box(false)}>{label} {open ? '▴' : '▾'}</button>
+      <div style={{ ...box(true), cursor: 'default' }}>{value}</div>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {options.filter((o) => o.id !== valueId).map((o) => (
+            <button key={o.id} onClick={() => onPick(o.id)} style={box(false)}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Cornell's local zone, always - a visitor's own timezone doesn't matter for a
+// regional forecast, and every model run is discussed in ET on the team anyway.
+const LOCAL_TZ = 'America/New_York';
+const fmtZulu = (iso: string) => {
+  const d = new Date(iso);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  return d.getUTCMinutes() ? `${hh}:${String(d.getUTCMinutes()).padStart(2, '0')}Z` : `${hh}Z`;
+};
+// e.g. "Thu 2:00 PM EDT (18Z)" - the short form drops the weekday for the
+// narrow range-end labels under the slider, which still need both zones.
 const fmtValid = (iso: string) =>
-  new Date(iso).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
+// the run provenance carries the date too - a 48-hour HRRR run and a
+// twice-daily StormCast scout are both easy to misread without it
+const fmtValidDated = (iso: string) =>
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
+// compact drops the weekday and the "EDT" abbreviation - there's only
+// ~140px under the slider on a phone. Desktop keeps the weekday: a 49-hour
+// HRRR run's two ends land on the same hour two days apart, which reads as
+// identical without it.
+const fmtValidShort = (iso: string, compact = false) =>
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, ...(compact ? {} : { weekday: 'short' as const }), hour: 'numeric', minute: '2-digit', timeZoneName: compact ? undefined : 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
 
 // Preserve the requested valid time when switching hourly and ten-minute products.
 function nearestFrame(frames: { valid: string }[], time: number): number {
@@ -140,6 +198,32 @@ export default function WeatherForecast() {
   const shownGroup = openGroup === undefined ? (layer ? groupOf(layer) : null) : openGroup;
   const idx = layer ? nearestFrame(layer.frames, requestedTime ?? now) : 0;
   const selectedFrame = layer?.frames[idx];
+
+  // the Model/Variable picker columns: only one unfolds at a time, and a
+  // click anywhere outside them folds whichever is open, like a native select
+  const [openPicker, setOpenPicker] = useState<'model' | 'variable' | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openPicker) return;
+    const onDown = (e: PointerEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setOpenPicker(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [openPicker]);
+
+  // basic play/pause: step one frame at a time and loop, off by default and
+  // whenever the model/variable changes so switching layers never keeps
+  // animating through an unrelated frame set
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => { setPlaying(false); }, [layerId]);
+  useEffect(() => {
+    if (!playing || !layer || layer.frames.length <= 1) return;
+    const id = window.setTimeout(() => {
+      setRequestedTime(Date.parse(layer.frames[(idx + 1) % layer.frames.length].valid));
+    }, 700);
+    return () => clearTimeout(id);
+  }, [playing, layer, idx]);
 
   useEffect(() => {
     if (!layer || !selectedFrame) return;
@@ -214,58 +298,37 @@ export default function WeatherForecast() {
         initial={HOME}
         dur={1}
         tileUrl={LIGHT_TILES}
-        attribution={`Basemap: Esri${layer ? `. ${layer.source.replace(/\s*·\s*/g, ', ')}` : ''}`}
+        attribution={`Basemap: CARTO${layer ? `. ${layer.source.replace(/\s*·\s*/g, ', ')}` : ''}`}
         minZ={2}
         maxZ={15}
         overlays={overlays}
         gridBounds={layer?.bounds}
       />
 
-      {/* top-left: the layer picker, with the run provenance as a footnote
-          under it rather than a title bar */}
+      {/* top-left: model + variable pickers - the run provenance and current
+          selection read out in the bar below instead, so this stays small no
+          matter how many models/variables we add */}
       <div style={{ position: 'absolute', top: small ? 18 : 24, left: small ? 12 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 'calc(100vw - 74px)' : 'calc(100% - 110px)' }}>
-        {layers.length > 0 && (() => {
-          const chip = (active: boolean): React.CSSProperties => ({
-            ...PANEL, appearance: 'none', cursor: 'pointer', padding: '6px 11px',
-            minHeight: 36, fontSize: 11.5, letterSpacing: '0.1em', textTransform: 'uppercase',
-            whiteSpace: 'nowrap', flexShrink: 0,
-            background: active ? '#e6ecf0' : (PANEL.background as string),
-            color: active ? '#0e141c' : '#e6ecf0',
-            // the active pick goes light, so it needs a dark line to hold
-            // its edge against the light basemap
-            border: active ? '1px solid #0e141c' : (PANEL.border as string),
-          });
-          return (
-            <>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {groups.map((g) => (
-                  <button key={g} aria-expanded={shownGroup === g} onClick={() => {
-                    setOpenGroup(shownGroup === g ? null : g);
-                    if (shownGroup !== g) setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null);
-                  }} style={chip(shownGroup === g)}>
-                    {g} {shownGroup === g ? '▾' : '▸'}
-                  </button>
-                ))}
-              </div>
-              {shownGroup && (
-                // phones: one row swiped sideways; the cut-off chip at the edge is the scroll affordance
-                <div style={{ display: 'flex', gap: 6, ...(small ? { overflowX: 'auto' as const, scrollbarWidth: 'none' as const, paddingBottom: 2 } : { flexWrap: 'wrap' as const }) }}>
-                  {layers.filter((l) => groupOf(l) === shownGroup).map((l) => (
-                    <button key={l.id} onClick={() => setLayerId(l.id)} aria-pressed={l.id === layer?.id} style={chip(l.id === layer?.id)}>
-                      {l.label.replace(new RegExp(`^${groupOf(l)} `), '')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          );
-        })()}
-        {layer && (
-          <div style={{ fontFamily: RESIPLE, fontSize: 10.5, letterSpacing: '0.06em', color: stale ? '#8a5f10' : '#3d4a55', textShadow: HALO }}>
-            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${layer.source.replace(/\s*·\s*/g, ', ')}`}
-            {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValid(layer.init)}` : ''}
-            {stale && <strong style={{ display: 'block', color: '#8a4d00', marginTop: 5 }}>{stale}</strong>}
-            {layer.accumulation_start && <div style={{ marginTop: 5 }}>Accumulated from {fmtValid(layer.accumulation_start)}</div>}
+        {layers.length > 0 && (
+          <div ref={pickerRef} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <PickerColumn
+              label="Model"
+              value={shownGroup ?? ''}
+              valueId={shownGroup ?? ''}
+              options={groups.map((g) => ({ id: g, label: g }))}
+              open={openPicker === 'model'}
+              onToggle={() => setOpenPicker(openPicker === 'model' ? null : 'model')}
+              onPick={(g) => { setOpenGroup(g); setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null); setOpenPicker(null); }}
+            />
+            <PickerColumn
+              label="Variable"
+              value={layer ? layer.label.replace(new RegExp(`^${groupOf(layer)} `), '') : ''}
+              valueId={layer?.id ?? ''}
+              options={layers.filter((l) => groupOf(l) === shownGroup).map((l) => ({ id: l.id, label: l.label.replace(new RegExp(`^${groupOf(l)} `), '') }))}
+              open={openPicker === 'variable'}
+              onToggle={() => setOpenPicker(openPicker === 'variable' ? null : 'variable')}
+              onPick={(id) => { setLayerId(id); setOpenPicker(null); }}
+            />
           </div>
         )}
         {(refreshError || imageError) && (
@@ -288,42 +351,61 @@ export default function WeatherForecast() {
         </div>
       )}
 
-      {/* bottom-center: the timebar - a native range input is the whole widget */}
-      {layer && layer.frames.length > 1 && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '10px 16px', width: 'min(560px, calc(100vw - 32px))' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <input
-              type="range"
-              min={0}
-              max={layer.frames.length - 1}
-              step={1}
-              value={idx}
-              onChange={(e) => setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid))}
-              aria-label="Forecast valid time"
-              aria-valuetext={fmtValid(layer.frames[idx].valid)}
-              style={{ flex: 1, minWidth: 0, accentColor: '#e6ecf0' }}
-            />
-            <button
-              onClick={() => { setNow(Date.now()); setRequestedTime(null); }}
-              aria-pressed={requestedTime === null}
-              title="Show the forecast nearest the current time"
-              style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                minWidth: 52, minHeight: 32, padding: '5px 10px', fontFamily: RESIPLE, fontSize: 11, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
-                background: requestedTime === null ? '#e6ecf0' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
-            >Now</button>
-            <span style={{ fontSize: 12, whiteSpace: 'nowrap', minWidth: small ? 74 : 92, textAlign: 'right' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
+      {/* bottom-center: the timebar - now also where the current model/variable
+          and its run provenance read out, so the top-left picker can stay tiny */}
+      {layer && (
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '10px 18px 12px', width: 'min(720px, calc(100vw - 32px))' }}>
+          {/* the picker already names the model and variable - this line is
+              just where the run came from and when it started */}
+          <div style={{ fontSize: 10.5, letterSpacing: '0.02em', color: stale ? '#e0a94a' : '#9fb0ba', marginBottom: 8 }}>
+            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${layer.source.replace(/\s*·\s*/g, ', ')}`}
+            {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValidDated(layer.init)}` : ''}
+            {stale && <strong style={{ color: '#e0a94a' }}> · {stale}</strong>}
+            {layer.accumulation_start && <span> · Accumulated from {fmtValidDated(layer.accumulation_start)}</span>}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8fa0ab', marginTop: 3 }}>
-            <span>{fmtValid(layer.frames[0].valid)}</span>
-            <span>{fmtValid(layer.frames[layer.frames.length - 1].valid)}</span>
-          </div>
-        </div>
-      )}
-      {/* single-frame layers (radar) get the valid time where the bar would be */}
-      {layer && layer.frames.length === 1 && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '8px 14px', fontSize: 12 }}>
-          {fmtValid(layer.frames[0].valid)}{stale && <span style={{ color: '#d9a13c' }}> (stale)</span>}
+          {layer.frames.length > 1 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 12, alignItems: 'center' }}>
+              <button
+                onClick={() => setPlaying((p) => !p)}
+                aria-pressed={playing}
+                aria-label={playing ? 'Pause animation' : 'Play animation'}
+                title={playing ? 'Pause' : 'Play through the forecast'}
+                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 32, minHeight: 32, padding: 0, fontSize: 13, color: '#e6ecf0',
+                  background: playing ? 'rgba(255,255,255,0.16)' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
+              >{playing ? '❚❚' : '▶'}</button>
+              <input
+                type="range"
+                min={0}
+                max={layer.frames.length - 1}
+                step={1}
+                value={idx}
+                onChange={(e) => { setPlaying(false); setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid)); }}
+                aria-label="Forecast valid time"
+                aria-valuetext={fmtValid(layer.frames[idx].valid)}
+                style={{ gridColumn: 2, minWidth: 0, accentColor: '#e6ecf0' }}
+              />
+              <button
+                onClick={() => { setPlaying(false); setNow(Date.now()); setRequestedTime(null); }}
+                aria-pressed={requestedTime === null}
+                title="Show the forecast nearest the current time"
+                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  minHeight: 32, padding: '5px 10px', fontFamily: RESIPLE, fontSize: 11, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
+                  background: requestedTime === null ? '#e6ecf0' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
+              >Now</button>
+              {/* fixed width, not auto: the grid's 1fr slider column would
+                  otherwise resize with every frame as this string's length changes */}
+              <span style={{ fontSize: 12, whiteSpace: 'nowrap', textAlign: 'right', width: small ? '17ch' : '19ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
+              {/* aligned to the slider's own grid column, not the row's full width */}
+              <div style={{ gridColumn: 2, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8fa0ab', marginTop: 3 }}>
+                <span>{fmtValidShort(layer.frames[0].valid, small)}</span>
+                <span>{fmtValidShort(layer.frames[layer.frames.length - 1].valid, small)}</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12 }}>{fmtValid(layer.frames[0].valid)}</div>
+          )}
         </div>
       )}
 
