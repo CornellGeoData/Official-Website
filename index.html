@@ -32,12 +32,9 @@
     </script>
     <link rel="preload" href="/fonts/intan.otf" as="font" crossorigin />
     <link rel="preload" href="/fonts/resiple.ttf" as="font" crossorigin />
-    <!-- earth texture downloads alongside the three.js chunk instead of after
-         it; crossorigin matches THREE.ImageLoader's anonymous request so the
-         preload actually hits cache. The aspect clause approximates the hero's
-         own test (Globe.tsx): in a tall window the globe would reach the copy,
-         so it is not drawn and these 686KB would be wasted. -->
-    <link rel="preload" href="/earth-4k.webp" as="image" crossorigin media="(min-width: 721px) and (min-aspect-ratio: 5/4)" />
+    <!-- the home page's space backdrop (SpaceBackground.tsx) paints before
+         React mounts it; the looping globe video loads after the page does -->
+    <link rel="preload" href="/space-full.webp" as="image" />
   </head>
   <body>
     <div id="root"></div>

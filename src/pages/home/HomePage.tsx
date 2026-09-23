@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
-import Globe from './Globe';
+import Hero from './Hero';
+import SpaceBackground from './SpaceBackground';
 import { RESIPLE, MANTI, H2, BODY, PILL, PILL_PRIMARY, fmtTag } from '../../styles/theme';
 import { PROJECTS, RECRUITING_TRACKS, COFFEE_CHAT_SHEET, openApplications, shortDate } from '../../data/content';
 
@@ -30,7 +31,7 @@ function RecruitingTimeline() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
   return (
-    <section style={{ position: 'relative', zIndex: 2, background: '#0e141c', padding: '0 clamp(24px,5vw,72px) 96px' }}>
+    <section style={{ position: 'relative', zIndex: 2, padding: '0 clamp(24px,5vw,72px) 96px' }}>
       {/* on phones the heading drops lower - clear of the Join section above,
           tighter against its own timeline below */}
       <h2 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(42px,6.2vw,80px)', letterSpacing: '-0.03em', lineHeight: 1, margin: mobile ? '40px 0 0' : 0 }}>Recruiting <span style={{ color: '#4fae7d' }}>Timeline</span></h2>
@@ -119,10 +120,11 @@ export function HomePage() {
   const open = openApplications();
   return (
     <>
-    <Globe />
+    <SpaceBackground />
+    <Hero />
 
     {/* PROJECTS */}
-    <section id="projects" style={{ position: 'relative', zIndex: 2, background: '#0e141c', padding: '120px clamp(24px,5vw,72px) 48px' }}>
+    <section id="projects" style={{ position: 'relative', zIndex: 2, padding: '120px clamp(24px,5vw,72px) 48px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <h2 style={{ ...H2, maxWidth: '16ch' }}>Instruments built by students, deployed in the field</h2>
         <p style={{ ...BODY, margin: '26px 0 0' }}>GeoData is the only Cornell project team affiliated with both the College of Engineering and the Department of Earth and Atmospheric Sciences. Members design the instruments, deploy them in the field, and run their own projects.</p>
@@ -159,7 +161,7 @@ export function HomePage() {
     </section>
 
     {/* TEAM PHOTO */}
-    <section id="team" style={{ position: 'relative', zIndex: 2, background: '#0e141c', padding: '48px clamp(24px,5vw,72px) 64px' }}>
+    <section id="team" style={{ position: 'relative', zIndex: 2, padding: '48px clamp(24px,5vw,72px) 64px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <figure style={{ margin: '0 auto', position: 'relative', maxWidth: 960 }}>
           <img loading="lazy" decoding="async" src="/team.webp" alt="The GeoData team on the stairs of Upson Hall" style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '1600/1066' }} />
@@ -169,7 +171,7 @@ export function HomePage() {
     </section>
 
     {/* JOIN */}
-    <section id="join" style={{ position: 'relative', zIndex: 2, background: '#0e141c', padding: '104px clamp(24px,5vw,72px) 110px' }}>
+    <section id="join" style={{ position: 'relative', zIndex: 2, padding: '104px clamp(24px,5vw,72px) 110px' }}>
       <div style={{ maxWidth: 820 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontFamily: RESIPLE, fontSize: 20, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#4fae7d' }}>
           {/* tethersonde stand-in for the usual "we're live" dot */}
