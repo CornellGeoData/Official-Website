@@ -181,13 +181,6 @@ details[open] > summary .chev::before {
   height: 100dvh;
 }
 
-/* the mobile hero's drifting stars: the strip is two identical tiles wide,
-   so -50% lands exactly on the seam and the loop never jumps */
-@keyframes star-drift {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
 /* the copied check mark on the sponsors email button */
 @keyframes check-pop {
   from { transform: scale(0.4); opacity: 0; }

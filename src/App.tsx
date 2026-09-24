@@ -76,7 +76,7 @@ export default function App() {
   const open = openApplications()[0];
   const bannerHidden = pastHero || onSensorsPage || activePost;
   return (
-    <div style={{ position: 'relative', width: '100%', overflowX: 'clip', background: '#0e141c' }}>
+    <div style={{ position: 'relative', width: '100%', overflowX: 'clip' }}>
       <div className="site-header-shell" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
       {open && (
         <a href={open.track.form} target="_blank" rel="noopener noreferrer" style={{ display: 'block', overflow: 'hidden', textAlign: 'center', maxHeight: bannerHidden ? 0 : 44, padding: bannerHidden ? '0 16px' : '8px 16px', transition: 'max-height 0.3s, padding 0.3s', background: '#086727', color: '#eaf2ee', fontWeight: 700, fontSize: 14, fontFamily: RESIPLE }}>{open.track.track} Recruiting is Open until {shortDate(open.due.end)}! →</a>
@@ -152,7 +152,7 @@ export default function App() {
       )}
 
       {/* FOOTER - supported by + contact */}
-      <footer id="partners" style={{ position: 'relative', zIndex: 2, background: '#0e141c', padding: '84px clamp(24px,5vw,72px) 36px' }}>
+      <footer id="partners" style={{ position: 'relative', zIndex: 2, padding: '84px clamp(24px,5vw,72px) 36px' }}>
         <div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '48px 72px', justifyContent: 'space-between' }}>
             <div style={{ flex: '1 1 220px' }}>
