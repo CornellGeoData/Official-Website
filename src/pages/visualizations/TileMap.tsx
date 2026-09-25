@@ -111,7 +111,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.nonce]);
 
-  // ---- panning and pinch: one pointer pans, two zoom ----
+  // ---- panning and pinch: one pointer pans, two zoom (globeEngine's idiom) ----
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
