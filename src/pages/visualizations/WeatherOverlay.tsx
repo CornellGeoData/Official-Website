@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { latToY, lonToX, visibleRasterTiles, type Rect } from './mercator';
 import type { Overlay } from './TileMap';
+import { imageCache } from './wxClient';
 
 export default function WeatherOverlay({ overlay, view, size }: {
   overlay: Overlay;
@@ -8,16 +9,13 @@ export default function WeatherOverlay({ overlay, view, size }: {
   size: { w: number; h: number };
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  // TileMap keys this component by frame URL, so old frames cannot paint over
-  // the current one and decoded images are released when the frame changes.
-  const imageCache = useRef(new Map<string, HTMLImageElement>());
   const dpr = window.devicePixelRatio || 1;
 
   useLayoutEffect(() => {
     const context = canvas.current?.getContext('2d');
     if (!context || !size.w || !size.h) return;
     const ctx = context;
-    const images = imageCache.current;
+    const images = imageCache;
     const { bounds, tiles, url } = overlay;
     const { zoom } = view;
     const imageRect = {
@@ -51,8 +49,12 @@ export default function WeatherOverlay({ overlay, view, size }: {
       const w = Math.min(size.w, clip.x + clip.w) - x;
       const h = Math.min(size.h, clip.y + clip.h) - y;
       if (w <= 0 || h <= 0) return;
-      // Keep enlarged weather tiles from turning into hard display-pixel squares.
-      ctx.imageSmoothingEnabled = true;
+      // Below native resolution (zoomed out), smooth so many model cells
+      // blending into one screen pixel doesn't alias. Past native resolution
+      // (zoomed in), switch to nearest-neighbor so real grid cells render as
+      // crisp, well-defined blocks instead of a blurred interpolation.
+      const magnification = (full.w / img.naturalWidth) * dpr;
+      ctx.imageSmoothingEnabled = magnification <= 1;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img,
         (x - full.x) / full.w * img.naturalWidth, (y - full.y) / full.h * img.naturalHeight,

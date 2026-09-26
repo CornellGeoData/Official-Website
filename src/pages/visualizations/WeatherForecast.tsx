@@ -2,52 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import TileMap, { type MapTarget, type Overlay } from './TileMap';
 import type { MapSite } from './sensorData';
 import { RESIPLE } from '../../styles/theme';
+import { WX_BASE, fetchManifest, readWeatherValues, loadImage, type Frame, type Scale, type WxLayer, type Manifest } from './wxClient';
 
-// Weather maps and value grids are published separately from the website.
-const WX_BASE = import.meta.env.VITE_WX_BASE || 'https://cornellgeodata.github.io/geodata-wx';
-
-// Esri's light-gray canvas: keyless like the imagery layer, white enough that
-// conventional weather colors carry all the meaning. Levels stop at 16.
+// CARTO Positron: clean and light like the old gray canvas, but with a real
+// state-boundary line and labels baked in - unlike USGS Topo it carries no
+// terrain shading or dense hydrology labeling, so it doesn't compete with
+// the weather colors. Needs a free key (carto.com/basemaps/apikey) or every
+// tile is watermarked "API KEY REQUIRED"; set VITE_CARTO_KEY in .env.local.
+const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
 const LIGHT_TILES = (z: number, x: number, y: number) =>
-  `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+  `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`;
 
 // Initial position before the selected feed's full grid arrives.
 const INITIAL_SMALL = window.matchMedia('(max-width: 720px)').matches;
 const HOME = { lat: 42.75, lon: -76.6, zoom: INITIAL_SMALL ? 8.2 : 9 };
 
-interface Frame { file: string; valid: string; data?: string }
-// per-layer regular grid of point values (row 0 = north edge, row-major),
-// published next to the PNGs so a click can read the actual number
-interface ValuesMeta { n: number; s: number; w: number; e: number; rows: number; cols: number; unit: string }
-// the colour scale as data - rendered as a real DOM element, not a raster
-interface Scale {
-  type: 'steps' | 'gradient';
-  label: string;
-  bounds?: number[];
-  colors?: string[];
-  over?: string;
-  min?: number;
-  max?: number;
-  stops?: string[];
-}
-interface WxLayer {
-  id: string;
-  label: string;
-  source: string;
-  kind: 'obs' | 'forecast';
-  init: string | null;
-  stale_minutes: number;
-  group?: string;
-  expected_update_at?: string;
-  valid_until?: string;
-  accumulation_start?: string;
-  opacity: number;
-  bounds: { n: number; s: number; w: number; e: number };
-  tiles?: { width: number; height: number; size: number };
-  scale?: Scale;
-  values?: ValuesMeta;
-  frames: Frame[];
-}
+// fallback when the manifest doesn't publish its own group_order
+const DEFAULT_GROUP_ORDER = ['StormCast', 'Nowcast', 'MRMS', 'HRRR'];
 
 // the key sits straight on the map - no card. Black ink with a white halo
 // reads on the light basemap and any overlay alike. Vertical, highest value
@@ -94,31 +65,68 @@ function ColorScale({ scale, small }: { scale: Scale; small: boolean }) {
     </div>
   );
 }
-interface Manifest { version: number; generated: string; layers: WxLayer[]; status?: { degraded?: boolean; reason?: string } }
 
 const PANEL: React.CSSProperties = {
   background: 'rgba(14,20,28,0.82)', backdropFilter: 'blur(6px)',
   border: '1px solid rgba(255,255,255,0.25)', color: '#e6ecf0', fontFamily: RESIPLE,
 };
 
-const fmtValid = (iso: string) =>
-  new Date(iso).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
-
-async function readWeatherValues(response: Response): Promise<(number | null)[]> {
-  if (!response.ok) throw new Error(`Weather values: HTTP ${response.status}`);
-  const bytes = await response.arrayBuffer();
-  const header = new Uint8Array(bytes, 0, Math.min(2, bytes.byteLength));
-  const body = new Blob([bytes]).stream();
-  // GitHub Pages serves .json.gz as a file, without Content-Encoding. Check
-  // the bytes so plain JSON and responses already decoded by fetch also work.
-  const decoded = header[0] === 0x1f && header[1] === 0x8b
-    ? body.pipeThrough(new DecompressionStream('gzip'))
-    : body;
-  const { v } = await new Response(decoded).json();
-  if (!Array.isArray(v)) throw new Error('Weather values: missing grid');
-  return v;
+// the "MODEL"/"VARIABLE" caption box is the dropdown trigger, styled exactly
+// like every option box. The current selection sits below it, always
+// visible, in the same style; opening the dropdown adds the *other* options
+// underneath that - the selected box never duplicates into the list.
+function PickerColumn({ label, value, valueId, options, open, onToggle, onPick }: {
+  label: string; value: string; valueId: string;
+  options: { id: string; label: string }[];
+  open: boolean; onToggle: () => void; onPick: (id: string) => void;
+}) {
+  const box = (active: boolean): React.CSSProperties => ({
+    ...PANEL, cursor: 'pointer', padding: '7px 11px', minWidth: 132, minHeight: 34,
+    fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'left',
+    // flex, not block: a <div> box would sit its text on the top padding
+    // while the <button> boxes centre theirs, and the row would look off
+    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center',
+    ...(active ? { background: '#e6ecf0', color: '#0e141c', border: '1px solid #0e141c' } : {}),
+  });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <button onClick={onToggle} aria-expanded={open} style={box(false)}>{label} {open ? '▴' : '▾'}</button>
+      <div style={{ ...box(true), cursor: 'default' }}>{value}</div>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {options.filter((o) => o.id !== valueId).map((o) => (
+            <button key={o.id} onClick={() => onPick(o.id)} style={box(false)}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
+// Cornell's local zone, always - a visitor's own timezone doesn't matter for a
+// regional forecast, and every model run is discussed in ET on the team anyway.
+const LOCAL_TZ = 'America/New_York';
+const fmtZulu = (iso: string) => {
+  const d = new Date(iso);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  return d.getUTCMinutes() ? `${hh}:${String(d.getUTCMinutes()).padStart(2, '0')}Z` : `${hh}Z`;
+};
+// e.g. "Thu 2:00 PM EDT (18Z)" - the short form drops the weekday for the
+// narrow range-end labels under the slider, which still need both zones.
+const fmtValid = (iso: string) =>
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
+// the run provenance carries the date too - a 48-hour HRRR run and a
+// twice-daily StormCast scout are both easy to misread without it
+const fmtValidDated = (iso: string) =>
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
+// compact drops the weekday and the "EDT" abbreviation - there's only
+// ~140px under the slider on a phone. Desktop keeps the weekday: a 49-hour
+// HRRR run's two ends land on the same hour two days apart, which reads as
+// identical without it.
+const fmtValidShort = (iso: string, compact = false) =>
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, ...(compact ? {} : { weekday: 'short' as const }), hour: 'numeric', minute: '2-digit', timeZoneName: compact ? undefined : 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
 
 // Preserve the requested valid time when switching hourly and ten-minute products.
 function nearestFrame(frames: { valid: string }[], time: number): number {
@@ -156,10 +164,7 @@ export default function WeatherForecast() {
       if (fetching || document.hidden) return;
       fetching = true;
       try {
-        const response = await fetch(`${WX_BASE}/latest.json`, { cache: 'no-cache', signal: AbortSignal.timeout(15_000) });
-        if (!response.ok) throw new Error(String(response.status));
-        const m: Manifest = await response.json();
-        if (!Array.isArray(m.layers) || !m.layers.every(l => Array.isArray(l.frames))) throw new Error('Invalid weather feed');
+        const m = await fetchManifest();
         if (alive) { setManifest(m); setRefreshError(false); }
       } catch {
         if (alive) {
@@ -181,10 +186,10 @@ export default function WeatherForecast() {
     && !(small && ['precip', 'snow'].includes(l.id)))
     .sort((a, b) => Number(b.id.endsWith('refc')) - Number(a.id.endsWith('refc'))) : [];
   const layer = layers.find(l => l.id === layerId) ?? layers.find(l => l.id === 'stormcast_refc') ?? layers.find(l => l.id === 'radar_refc') ?? layers[0] ?? null;
-  const groupOf = (l: WxLayer) => l.id === 'radar_refc' || l.source.includes('MRMS') ? 'MRMS' : l.group ??
-    (l.source.includes('StormScope') ? 'Nowcast' : l.source.includes('StormCast') ? 'StormCast' : 'HRRR');
-  const GROUP_ORDER = ['StormCast', 'Nowcast', 'MRMS', 'HRRR'];
-  const groups = [...new Set(layers.map(groupOf))].sort((a, b) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b));
+  const groupOf = (l: WxLayer) => l.group ??
+    (l.source.includes('MRMS') ? 'MRMS' : l.source.includes('StormScope') ? 'Nowcast' : l.source.includes('StormCast') ? 'StormCast' : 'HRRR');
+  const resolvedGroupOrder = (typeof manifest === 'object' && manifest.group_order) || DEFAULT_GROUP_ORDER;
+  const groups = [...new Set(layers.map(groupOf))].sort((a, b) => resolvedGroupOrder.indexOf(a) - resolvedGroupOrder.indexOf(b));
   const [openGroup, setOpenGroup] = useState<string | null | undefined>(undefined);
   const shownGroup = openGroup === undefined ? (layer ? groupOf(layer) : null) : openGroup;
   // a source reads "GeoData StormScope <sep> DGX Spark": the model, then the
@@ -193,20 +198,44 @@ export default function WeatherForecast() {
   const idx = layer ? nearestFrame(layer.frames, requestedTime ?? now) : 0;
   const selectedFrame = layer?.frames[idx];
 
+  // the Model/Variable picker columns: only one unfolds at a time, and a
+  // click anywhere outside them folds whichever is open, like a native select
+  const [openPicker, setOpenPicker] = useState<'model' | 'variable' | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openPicker) return;
+    const onDown = (e: PointerEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setOpenPicker(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [openPicker]);
+
+  // basic play/pause: step one frame at a time and loop, off by default and
+  // whenever the model/variable changes so switching layers never keeps
+  // animating through an unrelated frame set
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => { setPlaying(false); }, [layerId]);
+  useEffect(() => {
+    if (!playing || !layer || layer.frames.length <= 1) return;
+    const id = window.setTimeout(() => {
+      setRequestedTime(Date.parse(layer.frames[(idx + 1) % layer.frames.length].valid));
+    }, 700);
+    return () => clearTimeout(id);
+  }, [playing, layer, idx]);
+
   useEffect(() => {
     if (!layer || !selectedFrame) return;
     let alive = true;
-    const img = new Image();
     setImageError(false);
     const timeout = window.setTimeout(() => { if (alive) setImageError(true); }, 15_000);
-    img.src = `${WX_BASE}/${selectedFrame.file}`;
-    void img.decode().then(() => {
+    void loadImage(`${WX_BASE}/${selectedFrame.file}`).then(() => {
       if (!alive) return;
       clearTimeout(timeout);
       setImageError(false);
       setReady({ layer, frame: selectedFrame });
       // Only warm the next two frames. A 49-hour layer should not download on selection.
-      layer.frames.slice(idx + 1, idx + 3).forEach(f => { new Image().src = `${WX_BASE}/${f.file}`; });
+      layer.frames.slice(idx + 1, idx + 3).forEach(f => { void loadImage(`${WX_BASE}/${f.file}`); });
     }).catch(() => { if (alive) setImageError(true); });
     return () => { alive = false; clearTimeout(timeout); };
   }, [layer, selectedFrame, idx, retry]);
@@ -267,16 +296,22 @@ export default function WeatherForecast() {
         initial={HOME}
         dur={1}
         tileUrl={LIGHT_TILES}
+<<<<<<< HEAD
         attribution={small ? '' : `Basemap: Esri${layer ? `. ${sourceLabel(layer.source)}` : ''}`}
+=======
+        attribution={`Basemap: CARTO${layer ? `. ${layer.source.replace(/\s*·\s*/g, ', ')}` : ''}`}
+>>>>>>> origin/forecast-page-updates
         minZ={2}
         maxZ={15}
         overlays={overlays}
         gridBounds={layer?.bounds}
       />
 
-      {/* top-left: the layer picker, with the run provenance as a footnote
-          under it rather than a title bar */}
+      {/* top-left: model + variable pickers - the run provenance and current
+          selection read out in the bar below instead, so this stays small no
+          matter how many models/variables we add */}
       <div style={{ position: 'absolute', top: small ? 18 : 24, left: small ? 12 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 'calc(100vw - 74px)' : 'calc(100% - 110px)' }}>
+<<<<<<< HEAD
         {layers.length > 0 && (() => {
           const chip = (active: boolean): React.CSSProperties => ({
             ...PANEL, appearance: 'none', cursor: 'pointer', padding: '6px 11px',
@@ -318,6 +353,28 @@ export default function WeatherForecast() {
             {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${sourceLabel(layer.source)}`}
             {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValid(layer.init)}` : ''}
             {layer.accumulation_start && <div style={{ marginTop: 5 }}>Accumulated from {fmtValid(layer.accumulation_start)}</div>}
+=======
+        {layers.length > 0 && (
+          <div ref={pickerRef} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <PickerColumn
+              label="Model"
+              value={shownGroup ?? ''}
+              valueId={shownGroup ?? ''}
+              options={groups.map((g) => ({ id: g, label: g }))}
+              open={openPicker === 'model'}
+              onToggle={() => setOpenPicker(openPicker === 'model' ? null : 'model')}
+              onPick={(g) => { setOpenGroup(g); setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null); setOpenPicker(null); }}
+            />
+            <PickerColumn
+              label="Variable"
+              value={layer ? layer.label.replace(new RegExp(`^${groupOf(layer)} `), '') : ''}
+              valueId={layer?.id ?? ''}
+              options={layers.filter((l) => groupOf(l) === shownGroup).map((l) => ({ id: l.id, label: l.label.replace(new RegExp(`^${groupOf(l)} `), '') }))}
+              open={openPicker === 'variable'}
+              onToggle={() => setOpenPicker(openPicker === 'variable' ? null : 'variable')}
+              onPick={(id) => { setLayerId(id); setOpenPicker(null); }}
+            />
+>>>>>>> origin/forecast-page-updates
           </div>
         )}
         {(refreshError || imageError) && (
@@ -340,6 +397,7 @@ export default function WeatherForecast() {
         </div>
       )}
 
+<<<<<<< HEAD
       {/* bottom-center: the timebar - a native range input is the whole widget */}
       {layer && layer.frames.length > 1 && (
         <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: small ? '6px 12px' : '10px 16px', width: 'min(560px, calc(100vw - 32px))' }}>
@@ -382,6 +440,63 @@ export default function WeatherForecast() {
       {layer && layer.frames.length === 1 && (
         <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '8px 14px', fontSize: 12 }}>
           {fmtValid(layer.frames[0].valid)}
+=======
+      {/* bottom-center: the timebar - now also where the current model/variable
+          and its run provenance read out, so the top-left picker can stay tiny */}
+      {layer && (
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '10px 18px 12px', width: 'min(720px, calc(100vw - 32px))' }}>
+          {/* the picker already names the model and variable - this line is
+              just where the run came from and when it started */}
+          <div style={{ fontSize: 10.5, letterSpacing: '0.02em', color: stale ? '#e0a94a' : '#9fb0ba', marginBottom: 8 }}>
+            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${layer.source.replace(/\s*·\s*/g, ', ')}`}
+            {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValidDated(layer.init)}` : ''}
+            {stale && <strong style={{ color: '#e0a94a' }}> · {stale}</strong>}
+            {layer.accumulation_start && <span> · Accumulated from {fmtValidDated(layer.accumulation_start)}</span>}
+          </div>
+          {layer.frames.length > 1 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 12, alignItems: 'center' }}>
+              <button
+                onClick={() => setPlaying((p) => !p)}
+                aria-pressed={playing}
+                aria-label={playing ? 'Pause animation' : 'Play animation'}
+                title={playing ? 'Pause' : 'Play through the forecast'}
+                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 32, minHeight: 32, padding: 0, fontSize: 13, color: '#e6ecf0',
+                  background: playing ? 'rgba(255,255,255,0.16)' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
+              >{playing ? '❚❚' : '▶'}</button>
+              <input
+                type="range"
+                min={0}
+                max={layer.frames.length - 1}
+                step={1}
+                value={idx}
+                onChange={(e) => { setPlaying(false); setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid)); }}
+                aria-label="Forecast valid time"
+                aria-valuetext={fmtValid(layer.frames[idx].valid)}
+                style={{ gridColumn: 2, minWidth: 0, accentColor: '#e6ecf0' }}
+              />
+              <button
+                onClick={() => { setPlaying(false); setNow(Date.now()); setRequestedTime(null); }}
+                aria-pressed={requestedTime === null}
+                title="Show the forecast nearest the current time"
+                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  minHeight: 32, padding: '5px 10px', fontFamily: RESIPLE, fontSize: 11, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
+                  background: requestedTime === null ? '#e6ecf0' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
+              >Now</button>
+              {/* fixed width, not auto: the grid's 1fr slider column would
+                  otherwise resize with every frame as this string's length changes */}
+              <span style={{ fontSize: 12, whiteSpace: 'nowrap', textAlign: 'right', width: small ? '17ch' : '19ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
+              {/* aligned to the slider's own grid column, not the row's full width */}
+              <div style={{ gridColumn: 2, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8fa0ab', marginTop: 3 }}>
+                <span>{fmtValidShort(layer.frames[0].valid, small)}</span>
+                <span>{fmtValidShort(layer.frames[layer.frames.length - 1].valid, small)}</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12 }}>{fmtValid(layer.frames[0].valid)}</div>
+          )}
+>>>>>>> origin/forecast-page-updates
         </div>
       )}
 
