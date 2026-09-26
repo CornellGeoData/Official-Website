@@ -29,8 +29,7 @@ function earthCrowdsHero() {
 export default function Globe() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pinRef = useRef<HTMLDivElement | null>(null);
-  // WebGL blocked (Firefox resistFingerprinting, blocklisted drivers, etc.):
-  // swap the canvas for a pre-rendered still of the same scene
+  // neither WebGL nor a 2D canvas: swap the canvas for a pre-rendered still
   const [noWebGL, setNoWebGL] = useState(false);
   // The earth only earns its place when it clears the hero copy, which was
   // always the point of parking it right of centre. Where it would reach into
@@ -48,23 +47,33 @@ export default function Globe() {
     if (earthHidden) return;
     // dynamic import keeps three.js out of the initial bundle - the hero copy
     // paints immediately and the globe streams in behind it
-    let engine: { unmount(): void } | undefined;
+    let engine: { unmount(): void; project(lat: number, lon: number): { x: number; y: number; visible: boolean } | null } | undefined;
     let cancelled = false;
     const canvasEl = canvasRef.current!;
+    // the pin rides the globe, repositioned against each drawn frame
+    const onFrame = () => {
+      const el = pinRef.current;
+      const p = engine?.project(ITHACA.lat, ITHACA.lon);
+      if (!el) return;
+      if (!p || !p.visible) { el.style.opacity = '0'; return; }
+      el.style.opacity = '1';
+      el.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -50%)`;
+    };
     import('./globeEngine').then((mod) => {
       if (cancelled) return;
-      // the pin rides the globe, repositioned against each drawn frame
-      const onFrame = () => {
-        const el = pinRef.current;
-        const p = e.project(ITHACA.lat, ITHACA.lon);
-        if (!el) return;
-        if (!p || !p.visible) { el.style.opacity = '0'; return; }
-        el.style.opacity = '1';
-        el.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -50%)`;
-      };
       const e = new mod.GlobeEngine(onFrame);
-      e.mount({ canvasEl, onNoWebGL: () => setNoWebGL(true) });
       engine = e;
+      // no WebGL: the same globe, software-shaded on a 2D canvas; the
+      // still image is only for browsers that refuse that too
+      e.mount({ canvasEl, onNoWebGL: () => {
+        e.unmount();
+        import('./globe2d').then((m) => {
+          if (cancelled) return;
+          const g = new m.Globe2D(onFrame);
+          if (g.mount(canvasEl)) engine = g;
+          else setNoWebGL(true);
+        });
+      } });
     });
     return () => { cancelled = true; engine?.unmount(); };
   }, [earthHidden]);
