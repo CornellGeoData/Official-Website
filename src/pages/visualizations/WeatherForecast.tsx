@@ -296,11 +296,7 @@ export default function WeatherForecast() {
         initial={HOME}
         dur={1}
         tileUrl={LIGHT_TILES}
-<<<<<<< HEAD
-        attribution={small ? '' : `Basemap: Esri${layer ? `. ${sourceLabel(layer.source)}` : ''}`}
-=======
-        attribution={`Basemap: CARTO${layer ? `. ${layer.source.replace(/\s*·\s*/g, ', ')}` : ''}`}
->>>>>>> origin/forecast-page-updates
+        attribution={`Basemap: CARTO${layer ? `. ${sourceLabel(layer.source)}` : ''}`}
         minZ={2}
         maxZ={15}
         overlays={overlays}
@@ -311,49 +307,6 @@ export default function WeatherForecast() {
           selection read out in the bar below instead, so this stays small no
           matter how many models/variables we add */}
       <div style={{ position: 'absolute', top: small ? 18 : 24, left: small ? 12 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 'calc(100vw - 74px)' : 'calc(100% - 110px)' }}>
-<<<<<<< HEAD
-        {layers.length > 0 && (() => {
-          const chip = (active: boolean): React.CSSProperties => ({
-            ...PANEL, appearance: 'none', cursor: 'pointer', padding: '6px 11px',
-            minHeight: 36, fontSize: 11.5, letterSpacing: '0.1em', textTransform: 'uppercase',
-            whiteSpace: 'nowrap', flexShrink: 0,
-            background: active ? '#e6ecf0' : (PANEL.background as string),
-            color: active ? '#0e141c' : '#e6ecf0',
-            // the active pick goes light, so it needs a dark line to hold
-            // its edge against the light basemap
-            border: active ? '1px solid #0e141c' : (PANEL.border as string),
-          });
-          return (
-            <>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {groups.map((g) => (
-                  <button key={g} aria-expanded={shownGroup === g} onClick={() => {
-                    setOpenGroup(shownGroup === g ? null : g);
-                    if (shownGroup !== g) setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null);
-                  }} style={chip(shownGroup === g)}>
-                    {g} {shownGroup === g ? '▾' : '▸'}
-                  </button>
-                ))}
-              </div>
-              {shownGroup && (
-                // phones: one row swiped sideways; the cut-off chip at the edge is the scroll affordance
-                <div style={{ display: 'flex', gap: 6, ...(small ? { overflowX: 'auto' as const, scrollbarWidth: 'none' as const, paddingBottom: 2 } : { flexWrap: 'wrap' as const }) }}>
-                  {layers.filter((l) => groupOf(l) === shownGroup).map((l) => (
-                    <button key={l.id} onClick={() => setLayerId(l.id)} aria-pressed={l.id === layer?.id} style={chip(l.id === layer?.id)}>
-                      {l.label.replace(new RegExp(`^${groupOf(l)} `), '')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          );
-        })()}
-        {layer && (
-          <div style={{ fontFamily: RESIPLE, fontSize: 10.5, letterSpacing: '0.06em', color: '#3d4a55', textShadow: HALO }}>
-            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${sourceLabel(layer.source)}`}
-            {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValid(layer.init)}` : ''}
-            {layer.accumulation_start && <div style={{ marginTop: 5 }}>Accumulated from {fmtValid(layer.accumulation_start)}</div>}
-=======
         {layers.length > 0 && (
           <div ref={pickerRef} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
             <PickerColumn
@@ -374,7 +327,6 @@ export default function WeatherForecast() {
               onToggle={() => setOpenPicker(openPicker === 'variable' ? null : 'variable')}
               onPick={(id) => { setLayerId(id); setOpenPicker(null); }}
             />
->>>>>>> origin/forecast-page-updates
           </div>
         )}
         {(refreshError || imageError) && (
@@ -397,61 +349,16 @@ export default function WeatherForecast() {
         </div>
       )}
 
-<<<<<<< HEAD
-      {/* bottom-center: the timebar - a native range input is the whole widget */}
-      {layer && layer.frames.length > 1 && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: small ? '6px 12px' : '10px 16px', width: 'min(560px, calc(100vw - 32px))' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <input
-              type="range"
-              min={0}
-              max={layer.frames.length - 1}
-              step={1}
-              value={idx}
-              onChange={(e) => setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid))}
-              aria-label="Forecast valid time"
-              aria-valuetext={fmtValid(layer.frames[idx].valid)}
-              style={{ flex: 1, minWidth: 0, height: 28, accentColor: '#e6ecf0' }}
-            />
-            {!small && (
-              <button
-                onClick={() => { setNow(Date.now()); setRequestedTime(null); }}
-                aria-pressed={requestedTime === null}
-                title="Show the forecast nearest the current time"
-                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  minWidth: 52, minHeight: 32, padding: '5px 10px', fontFamily: RESIPLE, fontSize: 11, letterSpacing: '0.08em',
-                  textTransform: 'uppercase', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
-                  background: requestedTime === null ? '#e6ecf0' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
-              >Now</button>
-            )}
-            <span style={{ fontSize: 12, whiteSpace: 'nowrap', minWidth: small ? 74 : 92, textAlign: 'right' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
-          </div>
-          {/* the span's two ends only fit where there is room; the picked
-              time above already says where the scrubber sits */}
-          {!small && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8fa0ab', marginTop: 3 }}>
-              <span>{fmtValid(layer.frames[0].valid)}</span>
-              <span>{fmtValid(layer.frames[layer.frames.length - 1].valid)}</span>
-            </div>
-          )}
-        </div>
-      )}
-      {/* single-frame layers (radar) get the valid time where the bar would be */}
-      {layer && layer.frames.length === 1 && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '8px 14px', fontSize: 12 }}>
-          {fmtValid(layer.frames[0].valid)}
-=======
       {/* bottom-center: the timebar - now also where the current model/variable
           and its run provenance read out, so the top-left picker can stay tiny */}
       {layer && (
         <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '10px 18px 12px', width: 'min(720px, calc(100vw - 32px))' }}>
           {/* the picker already names the model and variable - this line is
               just where the run came from and when it started */}
-          <div style={{ fontSize: 10.5, letterSpacing: '0.02em', color: stale ? '#e0a94a' : '#9fb0ba', marginBottom: 8 }}>
-            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${layer.source.replace(/\s*·\s*/g, ', ')}`}
+          <div style={{ fontSize: 10.5, letterSpacing: '0.02em', color: '#9fb0ba', marginBottom: 8 }}>
+            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${sourceLabel(layer.source)}`}
             {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValidDated(layer.init)}` : ''}
-            {stale && <strong style={{ color: '#e0a94a' }}> · {stale}</strong>}
-            {layer.accumulation_start && <span> · Accumulated from {fmtValidDated(layer.accumulation_start)}</span>}
+            {layer.accumulation_start && <span>. Accumulated from {fmtValidDated(layer.accumulation_start)}</span>}
           </div>
           {layer.frames.length > 1 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 12, alignItems: 'center' }}>
@@ -496,7 +403,6 @@ export default function WeatherForecast() {
           ) : (
             <div style={{ fontSize: 12 }}>{fmtValid(layer.frames[0].valid)}</div>
           )}
->>>>>>> origin/forecast-page-updates
         </div>
       )}
 
