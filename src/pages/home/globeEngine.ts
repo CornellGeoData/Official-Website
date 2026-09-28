@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// The home page's draggable globe and starfield.
+// The home page's draggable globe. The stars behind it are Sky.tsx.
 interface MountArgs {
   canvasEl: HTMLCanvasElement;
   onNoWebGL?: () => void;
@@ -44,7 +44,6 @@ export class GlobeEngine {
   baseRotY = 0;
   baseRotX = 0;
 
-  stars!: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
   globeHit!: THREE.Mesh;
 
   constructor(private readonly onFrame: () => void) {}
@@ -89,7 +88,7 @@ export class GlobeEngine {
     this.addDrag();
     this.onResize();
     // the canvas fades in off the first rendered frame instead of popping:
-    // skeleton, stars and (when the texture beat the chunk) the earth all
+    // skeleton and (when the texture beat the chunk) the earth
     // materialize together
     this._shown = false;
     canvasEl.style.opacity = '0';
@@ -233,19 +232,6 @@ export class GlobeEngine {
     group.add(globeHit);
     this.globeHit = globeHit;
 
-    // starfield
-    const starGeo = new THREE.BufferGeometry();
-    const sc = 900, sp = new Float32Array(sc * 3);
-    for (let i = 0; i < sc; i++) {
-      const rr = 18 + Math.random() * 20;
-      const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, rxy = Math.sqrt(1 - u * u);
-      sp[i*3] = rr * rxy * Math.cos(a); sp[i*3+1] = rr * u; sp[i*3+2] = rr * rxy * Math.sin(a);
-    }
-    starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x7d99a8, size: 0.09, transparent: true, opacity: 0.7 }));
-    scene.add(stars);
-    this.stars = stars;
-
     this.loadEarth(group);
 
     const aim = this.faceRot(34.25, -44.84);
@@ -293,7 +279,6 @@ export class GlobeEngine {
 
     this.group.rotation.y = this.baseRotY + this.userYaw;
     this.group.rotation.x = Math.max(-1.25, Math.min(1.25, this.baseRotX + this.userPitch));
-    this.stars.rotation.y += 0.0004;
 
     renderer.render(this.scene, this.camera);
     if (!this._shown) {

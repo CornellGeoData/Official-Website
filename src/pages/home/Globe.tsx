@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-// a static starfield for the mobile hero - same colour and sparseness as the
-// Points cloud the 3D engine scatters around the desktop globe
-const STARS = Array.from({ length: 90 }, () => ({
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  r: Math.random() < 0.25 ? 1.2 : 0.7,
-  o: 0.3 + Math.random() * 0.45,
-}));
+import Sky from './Sky';
 
 // Ithaca's position on the home globe.
 const ITHACA = { lat: 42.4474, lon: -76.4641 };
@@ -34,7 +26,7 @@ export default function Globe() {
   // The earth only earns its place when it clears the hero copy, which was
   // always the point of parking it right of centre. Where it would reach into
   // the text - phones, and any window tall enough for the sphere to grow past
-  // the hero column - the hero runs on the starfield alone and the engine
+  // the hero column - the hero runs on the sky alone and the engine
   // chunk is never even downloaded.
   const [earthHidden, setEarthHidden] = useState(earthCrowdsHero);
   useEffect(() => {
@@ -80,6 +72,8 @@ export default function Globe() {
 
   return (
     <section className="globe-sticky" style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+      {/* stars and comets, behind the earth (or on their own on phones) */}
+      <Sky />
       {!earthHidden && !noWebGL && <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />}
       {!earthHidden && !noWebGL && (
         <div ref={pinRef} aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: 46, height: 46, display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: 5 }}>
@@ -88,21 +82,6 @@ export default function Globe() {
         </div>
       )}
       {!earthHidden && noWebGL && <img src="/globe-fallback.webp" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right center' }} />}
-      {/* no earth: just the engine's starfield - two identical tiles
-          drifting left in a seamless loop, the CSS twin of the 3D scene's
-          slow stars.rotation.y */}
-      {earthHidden && (
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '200%', display: 'flex', animation: 'star-drift 90s linear infinite' }}>
-            {[0, 1].map((k) => (
-              <svg key={k} style={{ width: '50%', height: '100%' }}>
-                {STARS.map((s, i) => <circle key={i} cx={`${s.x}%`} cy={`${s.y}%`} r={s.r} fill="#7d99a8" opacity={s.o} />)}
-              </svg>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* HERO */}
       <div className={`hero-panel${earthHidden ? ' hero-panel-solo' : ''}`} style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: 'min(560px,50%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 0 0 clamp(24px,5vw,72px)', zIndex: 10, pointerEvents: 'none' }}>
         <h1 className="hero-title" style={{ fontFamily: "'Intan',sans-serif", fontWeight: 700, fontSize: 'clamp(60px,8vw,120px)', lineHeight: 0.95, letterSpacing: '-0.03em', margin: '0 0 -0.19em -0.045em' }}>Geo<span style={{ color: '#086727' }}>Data</span></h1>

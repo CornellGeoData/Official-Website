@@ -1,7 +1,7 @@
 // The home globe for browsers with WebGL turned off (LibreWolf, Mullvad,
 // GPU-blocklisted Chromium builds): the same scene as GlobeEngine, ray-cast
 // per pixel onto a plain 2D canvas. The earth is only re-shaded when it turns;
-// the per-frame cost is the starfield and one drawImage.
+// the per-frame cost is one drawImage. The stars behind it are Sky.tsx.
 
 type Projected = { x: number; y: number; visible: boolean };
 
@@ -46,8 +46,6 @@ export class Globe2D {
   ctx!: CanvasRenderingContext2D;
   buf = document.createElement('canvas');
   tex?: Uint8ClampedArray;
-  stars: Float32Array;
-  starRot = 0;
   // viewport, globe centre (gx in camera space; cx, cy, r the screen box)
   w = 0; h = 0; gx = 0; cx = 0; cy = 0; r = 0;
   dirty = true;
@@ -60,13 +58,6 @@ export class Globe2D {
     const [x, y, z] = unit(34.25, -44.84);
     this.baseRotY = -Math.atan2(x, z);
     this.baseRotX = Math.atan2(y, Math.hypot(x, z));
-    const sc = 900;
-    this.stars = new Float32Array(sc * 3);
-    for (let i = 0; i < sc; i++) {
-      const rr = 18 + Math.random() * 20;
-      const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, rxy = Math.sqrt(1 - u * u);
-      this.stars.set([rr * rxy * Math.cos(a), rr * u, rr * rxy * Math.sin(a)], i * 3);
-    }
   }
 
   // false when the browser will not hand out a 2D context either
@@ -241,24 +232,10 @@ export class Globe2D {
   animate = (): void => {
     if (this._destroyed) return;
     this._raf = requestAnimationFrame(this.animate);
-    const { ctx, w, h, stars } = this;
+    const { ctx, w, h } = this;
     if (this.dirty) { this.dirty = false; this.shade(); }
 
     ctx.clearRect(0, 0, w, h);
-    // starfield: the same Points cloud, perspective-projected, turning slowly
-    this.starRot += 0.0004;
-    const c = Math.cos(this.starRot), s = Math.sin(this.starRot);
-    const aspect = w / h;
-    ctx.fillStyle = 'rgba(125,153,168,0.7)';
-    for (let i = 0; i < stars.length; i += 3) {
-      const x = stars[i] * c + stars[i + 2] * s, z = -stars[i] * s + stars[i + 2] * c;
-      const depth = CAM_Z - z;
-      if (depth < 0.1) continue;
-      const sx = (x / (depth * FOV_TAN * aspect) * 0.5 + 0.5) * w;
-      const sy = (-stars[i + 1] / (depth * FOV_TAN) * 0.5 + 0.5) * h;
-      const size = 0.09 * (h / 2) / depth;
-      ctx.fillRect(sx - size / 2, sy - size / 2, size, size);
-    }
     ctx.drawImage(this.buf, this.cx - this.r, this.cy - this.r, this.r * 2, this.r * 2);
 
     if (!this._shown) {
