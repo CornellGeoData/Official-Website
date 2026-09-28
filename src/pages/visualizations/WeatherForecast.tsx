@@ -71,32 +71,51 @@ const PANEL: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.25)', color: '#e6ecf0', fontFamily: RESIPLE,
 };
 
-// the "MODEL"/"VARIABLE" caption box is the dropdown trigger, styled exactly
-// like every option box. The current selection sits below it, always
-// visible, in the same style; opening the dropdown adds the *other* options
-// underneath that - the selected box never duplicates into the list.
-function PickerColumn({ label, value, valueId, options, open, onToggle, onPick }: {
-  label: string; value: string; valueId: string;
-  options: { id: string; label: string }[];
+// hover/focus states can't live in inline styles, so the
+// controls are classes. Square everywhere, same dark glass as PANEL.
+const CSS = `
+.wxview button,.wxview input{-webkit-tap-highlight-color:transparent}
+.wxview ::-webkit-scrollbar{display:none}
+.wxbox{appearance:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:124px;min-height:32px;padding:6px 10px;background:rgba(14,20,28,0.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.25);color:#e6ecf0;font-family:${RESIPLE};font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:border-color .15s}
+.wxbox:hover,.wxbox[aria-expanded=true]{border-color:rgba(255,255,255,.6)}
+.wxbox svg{transition:transform .2s}
+.wxbox[aria-expanded=true] svg{transform:rotate(180deg)}
+.wxopt{appearance:none;display:flex;justify-content:space-between;align-items:baseline;gap:16px;width:100%;padding:7px 10px;background:transparent;border:0;color:#e6ecf0;font:inherit;letter-spacing:.08em;text-transform:uppercase;text-align:left;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s}
+.wxopt:hover{background:rgba(255,255,255,.1)}
+.wxopt[aria-selected=true]{background:#e6ecf0;color:#0e141c}
+.wxopt small{font-size:10px;letter-spacing:.02em;text-transform:none;opacity:.6}
+.wxbox:focus-visible,.wxopt:focus-visible{outline:1px solid #e6ecf0;outline-offset:2px}
+`;
+// play and Now: one height, one border, so they sit on the slider's line
+const BAR_BOX: React.CSSProperties = {
+  appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 26,
+  padding: 0, border: '1px solid #8fa0ab', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 10.5,
+  letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
+};
+
+const Chevron = () => (
+  <svg width="9" height="6" viewBox="0 0 9 6" aria-hidden><path d="M1 1l3.5 3.5L8 1" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>
+);
+
+// a caption on the map, one box holding the current value, and a list that
+// drops over the map with every option, current one inverted
+function Picker({ label, valueId, options, open, onToggle, onPick }: {
+  label: string; valueId: string;
+  options: { id: string; label: string; sub?: string }[];
   open: boolean; onToggle: () => void; onPick: (id: string) => void;
 }) {
-  const box = (active: boolean): React.CSSProperties => ({
-    ...PANEL, cursor: 'pointer', padding: '7px 11px', minWidth: 132, minHeight: 34,
-    fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'left',
-    // flex, not block: a <div> box would sit its text on the top padding
-    // while the <button> boxes centre theirs, and the row would look off
-    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center',
-    ...(active ? { background: '#e6ecf0', color: '#0e141c', border: '1px solid #0e141c' } : {}),
-  });
+  const current = options.find((o) => o.id === valueId);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <button onClick={onToggle} aria-expanded={open} style={box(false)}>{label} {open ? '▴' : '▾'}</button>
-      <div style={{ ...box(true), cursor: 'default' }}>{value}</div>
+    <div style={{ position: 'relative' }}>
+      <div style={{ fontFamily: RESIPLE, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#0e141c', textShadow: HALO, marginBottom: 4 }}>{label}</div>
+      <button className="wxbox" onClick={onToggle} aria-haspopup="listbox" aria-expanded={open}>
+        {current?.label ?? ''}<Chevron />
+      </button>
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {options.filter((o) => o.id !== valueId).map((o) => (
-            <button key={o.id} onClick={() => onPick(o.id)} style={box(false)}>
-              {o.label}
+        <div role="listbox" aria-label={label} style={{ ...PANEL, position: 'absolute', top: '100%', left: 0, marginTop: 4, minWidth: '100%', fontSize: 11.5, padding: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {options.map((o) => (
+            <button key={o.id} className="wxopt" role="option" aria-selected={o.id === valueId} onClick={() => onPick(o.id)}>
+              {o.label}{o.sub && <small>{o.sub}</small>}
             </button>
           ))}
         </div>
@@ -104,6 +123,10 @@ function PickerColumn({ label, value, valueId, options, open, onToggle, onPick }
     </div>
   );
 }
+
+// plain names for the acronyms a visitor won't know; the full source still
+// reads out in the map attribution
+const GROUP_NAME: Record<string, string> = { MRMS: 'Radar' };
 
 // Cornell's local zone, always - a visitor's own timezone doesn't matter for a
 // regional forecast, and every model run is discussed in ET on the team anyway.
@@ -113,20 +136,17 @@ const fmtZulu = (iso: string) => {
   const hh = String(d.getUTCHours()).padStart(2, '0');
   return d.getUTCMinutes() ? `${hh}:${String(d.getUTCMinutes()).padStart(2, '0')}Z` : `${hh}Z`;
 };
-// e.g. "Thu 2:00 PM EDT (18Z)" - the short form drops the weekday for the
-// narrow range-end labels under the slider, which still need both zones.
+// every time is ET (see LOCAL_TZ), so no zone name: "Thu 2:00 PM (18Z)"
 const fmtValid = (iso: string) =>
-  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
-// the run provenance carries the date too - a 48-hour HRRR run and a
-// twice-daily StormCast scout are both easy to misread without it
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' }).replace(',', '')} (${fmtZulu(iso)})`;
+// the run time carries the date - a 48-hour HRRR run and a twice-daily
+// StormCast scout are both easy to misread without it
 const fmtValidDated = (iso: string) =>
-  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
-// compact drops the weekday and the "EDT" abbreviation - there's only
-// ~140px under the slider on a phone. Desktop keeps the weekday: a 49-hour
-// HRRR run's two ends land on the same hour two days apart, which reads as
-// identical without it.
+  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).replace(',', '')} (${fmtZulu(iso)})`;
+// slider ends: local time only, the readout carries Zulu. Desktop keeps the
+// weekday since a 49-hour run's two ends land on the same hour; phones drop it.
 const fmtValidShort = (iso: string, compact = false) =>
-  `${new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, ...(compact ? {} : { weekday: 'short' as const }), hour: 'numeric', minute: '2-digit', timeZoneName: compact ? undefined : 'short' }).replace(',', '')} (${fmtZulu(iso)})`;
+  new Date(iso).toLocaleString([], { timeZone: LOCAL_TZ, ...(compact ? {} : { weekday: 'short' as const }), hour: 'numeric', minute: '2-digit' }).replace(',', '');
 
 // Preserve the requested valid time when switching hourly and ten-minute products.
 function nearestFrame(frames: { valid: string }[], time: number): number {
@@ -207,9 +227,19 @@ export default function WeatherForecast() {
     const onDown = (e: PointerEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setOpenPicker(null);
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenPicker(null); };
     document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey); };
   }, [openPicker]);
+  // "next 48h" / "past 2h" from the group's own frames, so it never goes stale
+  const horizon = (g: string) => {
+    const l = layers.find((x) => groupOf(x) === g);
+    if (!l || l.frames.length < 2) return undefined;
+    const mins = (Date.parse(l.frames[l.frames.length - 1].valid) - Date.parse(l.frames[0].valid)) / 60_000;
+    const span = mins >= 90 ? `${Math.round(mins / 60)}h` : `${Math.round(mins)}m`;
+    return l.kind === 'obs' ? `past ${span}` : `next ${span}`;
+  };
 
   // basic play/pause: step one frame at a time and loop, off by default and
   // whenever the model/variable changes so switching layers never keeps
@@ -249,6 +279,7 @@ export default function WeatherForecast() {
   // the map wants a target; the forecast stage just parks on the region
   const target = useRef<MapTarget>({ ...HOME, nonce: 0 }).current;
 
+
   // the number under the probe for the active layer+frame; fetches the frame's
   // value grid on demand and caches it, so scrubbing re-reads instantly
   const valueAt = (lat: number, lon: number): string => {
@@ -285,7 +316,7 @@ export default function WeatherForecast() {
     // userSelect none inherits everywhere: no long-press text selection or
     // copy callouts on chips, labels, scales, or the map - it's an app, not a page
     <div className="wxview" style={{ position: 'absolute', inset: 0, background: '#e8e8e6', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
-      <style>{'.wxview button, .wxview input{-webkit-tap-highlight-color:transparent}.wxview ::-webkit-scrollbar{display:none}'}</style>
+      <style>{CSS}</style>
       <TileMap
         sites={probeSites}
         selectedIds={probe ? ['probe'] : []}
@@ -308,19 +339,17 @@ export default function WeatherForecast() {
           matter how many models/variables we add */}
       <div style={{ position: 'absolute', top: small ? 18 : 24, left: small ? 12 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 'calc(100vw - 74px)' : 'calc(100% - 110px)' }}>
         {layers.length > 0 && (
-          <div ref={pickerRef} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-            <PickerColumn
+          <div ref={pickerRef} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Picker
               label="Model"
-              value={shownGroup ?? ''}
               valueId={shownGroup ?? ''}
-              options={groups.map((g) => ({ id: g, label: g }))}
+              options={groups.map((g) => ({ id: g, label: GROUP_NAME[g] ?? g, sub: horizon(g) }))}
               open={openPicker === 'model'}
               onToggle={() => setOpenPicker(openPicker === 'model' ? null : 'model')}
               onPick={(g) => { setOpenGroup(g); setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null); setOpenPicker(null); }}
             />
-            <PickerColumn
+            <Picker
               label="Variable"
-              value={layer ? layer.label.replace(new RegExp(`^${groupOf(layer)} `), '') : ''}
               valueId={layer?.id ?? ''}
               options={layers.filter((l) => groupOf(l) === shownGroup).map((l) => ({ id: l.id, label: l.label.replace(new RegExp(`^${groupOf(l)} `), '') }))}
               open={openPicker === 'variable'}
@@ -349,28 +378,30 @@ export default function WeatherForecast() {
         </div>
       )}
 
-      {/* bottom-center: the timebar - now also where the current model/variable
-          and its run provenance read out, so the top-left picker can stay tiny */}
+      {/* bottom-center: the timebar. The pickers name the model and variable
+          and the attribution names the source, so the top line is only the run time */}
       {layer && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 30 : 34, zIndex: 4, ...PANEL, padding: '10px 18px 12px', width: 'min(720px, calc(100vw - 32px))' }}>
-          {/* the picker already names the model and variable - this line is
-              just where the run came from and when it started */}
-          <div style={{ fontSize: 10.5, letterSpacing: '0.02em', color: '#9fb0ba', marginBottom: 8 }}>
-            {layer.kind === 'obs' ? 'Observed: NOAA MRMS radar' : `Forecast: ${sourceLabel(layer.source)}`}
-            {layer.init ? `, ${layer.kind === 'obs' ? 'observed' : 'initialized'} ${fmtValidDated(layer.init)}` : ''}
-            {layer.accumulation_start && <span>. Accumulated from {fmtValidDated(layer.accumulation_start)}</span>}
-          </div>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 24 : 28, zIndex: 4, ...PANEL, padding: '7px 12px 6px', width: 'min(600px, calc(100vw - 24px))' }}>
+          {layer.init && (
+            <div style={{ fontSize: 10, color: '#8fa0ab', marginBottom: 5 }}>
+              {layer.kind === 'obs' ? 'Updated' : 'Run'} {fmtValidDated(layer.init)}
+              {layer.accumulation_start && `, total since ${fmtValidDated(layer.accumulation_start)}`}
+            </div>
+          )}
           {layer.frames.length > 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 8, alignItems: 'center' }}>
               <button
                 onClick={() => setPlaying((p) => !p)}
                 aria-pressed={playing}
                 aria-label={playing ? 'Pause animation' : 'Play animation'}
-                title={playing ? 'Pause' : 'Play through the forecast'}
-                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  minWidth: 32, minHeight: 32, padding: 0, fontSize: 13, color: '#e6ecf0',
-                  background: playing ? 'rgba(255,255,255,0.16)' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
-              >{playing ? '❚❚' : '▶'}</button>
+                title={playing ? 'Pause' : 'Play'}
+                style={{ ...BAR_BOX, width: 26, background: playing ? 'rgba(255,255,255,0.16)' : 'transparent' }}
+              >
+                {/* svg, not ▶/❚❚ text: glyphs sit at different heights per font */}
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+                  {playing ? <path d="M2 1h2v8H2zM6 1h2v8H6z" /> : <path d="M2 1l7 4-7 4z" />}
+                </svg>
+              </button>
               <input
                 type="range"
                 min={0}
@@ -380,28 +411,26 @@ export default function WeatherForecast() {
                 onChange={(e) => { setPlaying(false); setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid)); }}
                 aria-label="Forecast valid time"
                 aria-valuetext={fmtValid(layer.frames[idx].valid)}
-                style={{ gridColumn: 2, minWidth: 0, accentColor: '#e6ecf0' }}
+                style={{ gridColumn: 2, minWidth: 0, margin: 0, accentColor: '#e6ecf0' }}
               />
+              {/* fixed width, not auto: the grid's 1fr slider column would
+                  otherwise resize with every frame as this string's length changes */}
+              <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', textAlign: 'right', width: '17ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
               <button
                 onClick={() => { setPlaying(false); setNow(Date.now()); setRequestedTime(null); }}
                 aria-pressed={requestedTime === null}
-                title="Show the forecast nearest the current time"
-                style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  minHeight: 32, padding: '5px 10px', fontFamily: RESIPLE, fontSize: 11, letterSpacing: '0.08em',
-                  textTransform: 'uppercase', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
-                  background: requestedTime === null ? '#e6ecf0' : 'transparent', border: '1px solid #8fa0ab', cursor: 'pointer' }}
+                title="Jump to the current time"
+                style={{ ...BAR_BOX, padding: '0 8px', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
+                  background: requestedTime === null ? '#e6ecf0' : 'transparent' }}
               >Now</button>
-              {/* fixed width, not auto: the grid's 1fr slider column would
-                  otherwise resize with every frame as this string's length changes */}
-              <span style={{ fontSize: 12, whiteSpace: 'nowrap', textAlign: 'right', width: small ? '17ch' : '19ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
               {/* aligned to the slider's own grid column, not the row's full width */}
-              <div style={{ gridColumn: 2, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8fa0ab', marginTop: 3 }}>
+              <div style={{ gridColumn: 2, display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#8fa0ab', marginTop: 1 }}>
                 <span>{fmtValidShort(layer.frames[0].valid, small)}</span>
                 <span>{fmtValidShort(layer.frames[layer.frames.length - 1].valid, small)}</span>
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: 12 }}>{fmtValid(layer.frames[0].valid)}</div>
+            <div style={{ fontSize: 11.5 }}>{fmtValid(layer.frames[0].valid)}</div>
           )}
         </div>
       )}
