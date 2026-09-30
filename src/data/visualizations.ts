@@ -27,7 +27,7 @@ export const VISUALIZATIONS: Visualization[] = [
     id: 'verify',
     label: 'Model Verification',
     blurb: 'How well did the models do? Compare what actually happened over Central New York against HRRR, GFS, and AIFS forecasts valid at the same hour.',
-    thumb: '/visualizations/forecast.webp',
+    thumb: '/visualizations/historical.webp',
     hash: '#/sensors/verify',
   },
   {
