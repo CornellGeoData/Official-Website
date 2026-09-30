@@ -4,6 +4,7 @@ import { RESIPLE, MANTI } from '../../styles/theme';
 import SensorMap from './SensorMap';
 import { VisualizationList } from './VisualizationList';
 import WeatherForecast from './WeatherForecast';
+import WeatherVerify from './WeatherVerify';
 import { VISUALIZATIONS } from '../../data/visualizations';
 import {
   AIR, SOIL, WEATHER, EGGS, SOILMOTES, ARCHIVE, RETIRED, NEWA_STATIONS, RANGES,
@@ -61,6 +62,9 @@ export function VisualizationsPage() {
   // the forecast stage: regional weather maps over a light basemap, fed by the
   // lab's render pipeline. A full-screen sheet like staticView.
   const [forecastView, setForecastView] = useState(stageFromHash() === 'forecast');
+  // the verification stage: the same map, showing what actually happened over
+  // Central NY beside what each model forecast for that hour
+  const [verifyView, setVerifyView] = useState(stageFromHash() === 'verify');
   const [lidarView, setLidarView] = useState(stageFromHash() === 'lidar');
   const [hexapodView, setHexapodView] = useState(stageFromHash() === 'hexapod');
   // the landing's links change the hash without remounting this page
@@ -69,6 +73,7 @@ export function VisualizationsPage() {
       setMapView(stageFromHash() === 'map');
       setStaticView(tabFromHash());
       setForecastView(stageFromHash() === 'forecast');
+      setVerifyView(stageFromHash() === 'verify');
       setLidarView(stageFromHash() === 'lidar');
       setHexapodView(stageFromHash() === 'hexapod');
       setOpen([]);
@@ -76,7 +81,7 @@ export function VisualizationsPage() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-  const home = !mapView && !staticView && !forecastView && !lidarView && !hexapodView;
+  const home = !mapView && !staticView && !forecastView && !verifyView && !lidarView && !hexapodView;
   useEffect(() => {
     if (home) return;
     const f = document.getElementById('partners');
@@ -103,7 +108,7 @@ export function VisualizationsPage() {
   // so it's styled directly. Each stage's X is the way back to the menu (and
   // the header). The charts sheet is a page, not a map, so it keeps the
   // header outright
-  const headerHidden = !staticView && (mapView || forecastView || lidarView || hexapodView);
+  const headerHidden = !staticView && (mapView || forecastView || verifyView || lidarView || hexapodView);
   useEffect(() => {
     const bar = document.querySelector('.site-header')?.parentElement as HTMLElement | null;
     if (!bar) return;
@@ -123,9 +128,9 @@ export function VisualizationsPage() {
   // reflect the current stage into the hash so refresh and copied links land
   // where the reader was (replaceState fires no hashchange, so no loop)
   useEffect(() => {
-    const stage = staticView ?? (hexapodView ? 'hexapod' : lidarView ? 'lidar' : forecastView ? 'forecast' : mapView ? 'map' : null);
+    const stage = staticView ?? (hexapodView ? 'hexapod' : lidarView ? 'lidar' : forecastView ? 'forecast' : verifyView ? 'verify' : mapView ? 'map' : null);
     history.replaceState(null, '', stage ? `#/sensors/${stage}` : '#/sensors');
-  }, [mapView, staticView, forecastView, lidarView, hexapodView]);
+  }, [mapView, staticView, forecastView, verifyView, lidarView, hexapodView]);
   // clicking a dot toggles its card: open sensors close on a re-click. On
   // mobile only one sheet fits, so a pick replaces instead of stacking.
   const pick = (id: string | null) => {
@@ -614,6 +619,14 @@ export function VisualizationsPage() {
       {forecastView && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
           <WeatherForecast />
+          <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 5 }}>
+            <StageClose />
+          </div>
+        </div>
+      )}
+      {verifyView && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
+          <WeatherVerify />
           <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 5 }}>
             <StageClose />
           </div>

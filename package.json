@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "workspaces": ["src/viewers/lidar", "src/viewers/hexapod"],
+  "workspaces": [
+    "src/viewers/lidar",
+    "src/viewers/hexapod"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build && node compress.mjs",
@@ -11,10 +14,14 @@
     "start": "node server.mjs"
   },
   "dependencies": {
+    "@earthmover/icechunk": "^2.2.2",
     "express": "^5.2.1",
+    "proj4": "^2.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "three": "0.150.1"
+    "sharp": "^0.35.4",
+    "three": "0.150.1",
+    "zarrita": "^0.7.5"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

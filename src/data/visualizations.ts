@@ -1,6 +1,6 @@
 // Shared projects for the Visualizations list.
 export interface Visualization {
-  id: 'map' | 'charts' | 'forecast' | 'lidar' | 'hexapod';
+  id: 'map' | 'charts' | 'forecast' | 'verify' | 'lidar' | 'hexapod';
   label: string;
   blurb: string;
   thumb: string;
@@ -22,6 +22,13 @@ export const VISUALIZATIONS: Visualization[] = [
     blurb: 'Radar observations and regional forecasts for the Finger Lakes. Compare precipitation, temperature, and wind across separate model layers.',
     thumb: '/visualizations/forecast.webp',
     hash: '#/sensors/forecast',
+  },
+  {
+    id: 'verify',
+    label: 'Model Verification',
+    blurb: 'How well did the models do? Compare what actually happened over Central New York against HRRR, GFS, and AIFS forecasts valid at the same hour.',
+    thumb: '/visualizations/forecast.webp',
+    hash: '#/sensors/verify',
   },
   {
     id: 'lidar',

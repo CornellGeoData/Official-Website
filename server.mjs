@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import express from 'express';
+import { wxVerifyRouter, warmObservations } from './server/wxVerify.mjs';
 
 // serves dist/ and proxies the Air Quality Egg API so the key stays server-side.
 // EGG_SERIAL and EGG_API_KEY live in the host's environment (Railway), never in the repo.
@@ -144,6 +145,17 @@ app.get('/api/wx-lifetime', async (req, res) => {
     res.status(502).json({ error: String(err) });
   }
 });
+
+// Model verification maps, read from dynamical.org's open Icechunk archives.
+// Rendering is server-side because one panel touches several MB of chunks - see
+// server/wxArchive.mjs for the cost model. Panels are immutable and the module
+// keeps its own byte cache, so once a run is warm it costs no upstream traffic.
+app.use('/api/wx-verify', wxVerifyRouter());
+// One analysis read covers ~90 days for the region, so warming it at boot makes
+// every observation panel in that window instant - the same trick as the NEWA
+// archive above. Wind is included because it costs two component reads and is
+// otherwise the slowest first click. Deliberately not awaited.
+void warmObservations();
 
 // Serve the .br/.gz files produced by compress.mjs.
 const DIST = path.resolve('dist');
