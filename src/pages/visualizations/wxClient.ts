@@ -12,6 +12,10 @@ export interface Scale {
   bounds?: number[];
   colors?: string[];
   over?: string;
+  /** colour for values below the first bound; absent means draw nothing */
+  under?: string;
+  /** which bounds to label - a finely banded ramp has far too many to show all */
+  ticks?: number[];
   min?: number;
   max?: number;
   stops?: string[];
