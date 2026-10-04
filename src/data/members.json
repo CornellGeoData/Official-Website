@@ -84,6 +84,21 @@
     "linkedin": "https://www.linkedin.com/in/lucy-alcoba-97b496291"
   },
   {
+    "name": "Priyanka Cingirikonda",
+    "subteam": "Air",
+    "photo": "/members/priyanka.webp",
+    "email": "pc765@cornell.edu",
+    "major": "Atmospheric Science",
+    "linkedin": "https://www.linkedin.com/in/priyankac717/"
+  },
+  {
+    "name": "Jacques Dy",
+    "subteam": "Air",
+    "photo": "/members/jacques.webp",
+    "email": "jpd297@cornell.edu",
+    "major": "Atmospheric Science"
+  },
+  {
     "name": "Duke Gandin",
     "subteam": "Water",
     "lead": true,
@@ -123,6 +138,14 @@
     "email": "lmr285@cornell.edu",
     "major": "Earth and Climate Sciences",
     "linkedin": "https://www.linkedin.com/in/lauren-rakov/"
+  },
+  {
+    "name": "Mikiyas Asmamaw",
+    "subteam": "Water",
+    "photo": "/members/mikiyas.webp",
+    "email": "mka68@cornell.edu",
+    "major": "Chemical Engineering",
+    "linkedin": "https://www.linkedin.com/in/mikiyas-asmamaw/"
   },
   {
     "name": "Aya Saute",
@@ -183,6 +206,22 @@
     "linkedin": "https://www.linkedin.com/in/sophia-k-doyle"
   },
   {
+    "name": "Aidan Moodley",
+    "subteam": "Rock",
+    "photo": "",
+    "email": "adm289@cornell.edu",
+    "major": "Earth and Climate Sciences",
+    "linkedin": "https://www.linkedin.com/in/aidan-moodley/"
+  },
+  {
+    "name": "Leah Tang",
+    "subteam": "Rock",
+    "photo": "/members/leah.webp",
+    "email": "lt395@cornell.edu",
+    "major": "Applied & Engineering Physics and Earth & Atmospheric Sciences",
+    "linkedin": "https://www.linkedin.com/in/le-qi-tang/"
+  },
+  {
     "name": "Rithya Sriram",
     "subteam": "Data",
     "lead": true,
@@ -214,6 +253,21 @@
     "email": "mb2926@cornell.edu",
     "major": "Physics & Statistics",
     "linkedin": "https://www.linkedin.com/in/adam-zachry/"
+  },
+  {
+    "name": "Joshua Soo",
+    "subteam": "Data",
+    "photo": "",
+    "email": "js3767@cornell.edu",
+    "major": "Math & Computer Science",
+    "linkedin": "https://www.linkedin.com/in/joshua-soo/"
+  },
+  {
+    "name": "Jennifer Wang",
+    "subteam": "Data",
+    "photo": "/members/jennifer.webp",
+    "email": "jw2894@cornell.edu",
+    "major": "Math & Physics"
   },
   {
     "name": "Avinash Aravind",
@@ -257,6 +311,14 @@
     "linkedin": "https://www.linkedin.com/in/suchit-basineni/"
   },
   {
+    "name": "Milan Grbovic",
+    "subteam": "Tech",
+    "photo": "/members/milan.webp",
+    "email": "mg2527@cornell.edu",
+    "major": "Electrical Computer Engineering",
+    "linkedin": "https://www.linkedin.com/in/milan-grbovic-0a59bb35a/"
+  },
+  {
     "name": "Annika Malhotra",
     "subteam": "Business",
     "lead": true,
@@ -276,7 +338,7 @@
   {
     "name": "Joshua Kennedy",
     "subteam": "Business",
-    "photo": "/members/joshua.webp",
+    "photo": "/members/joshua-kennedy.webp",
     "email": "jak563@cornell.edu",
     "major": "Environment and Sustainability",
     "linkedin": "https://www.linkedin.com/in/joshua-kennedy-120046330/"
@@ -288,5 +350,13 @@
     "email": "rcs374@cornell.edu",
     "major": "Electrical Engineering",
     "linkedin": "https://www.linkedin.com/in/reece-shiraishi-86087b2b2/"
+  },
+  {
+    "name": "Sophie Wang",
+    "subteam": "Business",
+    "photo": "/members/sophie.webp",
+    "email": "sw2445@cornell.edu",
+    "major": "Biology & Society",
+    "linkedin": "https://www.linkedin.com/in/sophie-j-wang/"
   }
 ]
