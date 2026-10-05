@@ -32,10 +32,10 @@ export interface WxEvent {
 }
 
 export const EVENT_KINDS: { id: EventKind; label: string }[] = [
-  { id: 'severe', label: 'Severe convection' },
-  { id: 'tropical', label: 'Tropical remnants & flooding' },
+  { id: 'severe', label: 'Severe storms' },
+  { id: 'tropical', label: 'Tropical and flooding' },
   { id: 'frontal', label: 'Cold fronts' },
-  { id: 'winter', label: 'Lake effect & winter storms' },
+  { id: 'winter', label: 'Lake effect and winter' },
 ];
 
 export const WX_EVENTS: WxEvent[] = [
