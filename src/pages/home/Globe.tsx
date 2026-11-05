@@ -108,7 +108,7 @@ export default function Globe() {
     <section className="globe-sticky" style={{ width: '100%', overflow: 'hidden' }}>
       {/* a still star field behind the earth */}
       <div ref={skyRef} style={{ position: 'absolute', inset: 0 }}><Sky /></div>
-      {!noWebGL && <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />}
+      {!noWebGL && <canvas ref={canvasRef} className="globe-canvas" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />}
       {!noWebGL && (
         <div ref={pinRef} aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: 46, height: 46, display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: 5 }}>
           <span style={{ width: 14, height: 14, borderRadius: 999, background: '#ffffff', border: '2px solid #0e141c', boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
@@ -121,9 +121,6 @@ export default function Globe() {
         <h1 className="hero-title" style={{ fontFamily: "'Intan',sans-serif", fontWeight: 700, fontSize: 'clamp(60px,8vw,120px)', lineHeight: 0.95, letterSpacing: '-0.03em', margin: '0 0 -0.19em -0.045em' }}>Geo<span style={{ color: '#086727' }}>Data</span></h1>
         <div className="hero-subtitle" style={{ fontFamily: "'Resiple',sans-serif", fontSize: 'clamp(16px,1.55vw,20px)', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: '#4fae7d', marginTop: 26, textWrap: 'balance' }}>Cornell University Project Team</div>
         <p className="hero-mission">We build instruments to study the Finger Lakes.</p>
-        <div className="hero-desktop-action" style={{ marginTop: 26 }}>
-          <a href="#projects" style={{ display: 'inline-block', padding: '14px 28px', borderRadius: 999, background: '#086727', color: '#eaf2ee', fontWeight: 700, fontSize: 17.5, fontFamily: "'Resiple',sans-serif", pointerEvents: 'auto' }}>Explore our projects</a>
-        </div>
       </div>
       <a ref={scrollRef} className="hero-scroll" href="#finger-lakes">Scroll to the Finger Lakes <span aria-hidden="true">↓</span></a>
     </section>

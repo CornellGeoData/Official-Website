@@ -190,6 +190,11 @@ details[open] > summary .chev::before {
   height: 100dvh;
 }
 
+/* Swipes over the globe stay available for page scrolling on phones and tablets. */
+@media (max-width: 1100px), (pointer: coarse) {
+  .globe-canvas { pointer-events: none; }
+}
+
 /* the copied check mark on the sponsors email button */
 @keyframes check-pop {
   from { transform: scale(0.4); opacity: 0; }
@@ -586,8 +591,6 @@ picture { display: contents; }
   .hero-panel { top: max(112px, 15svh) !important; width: 100% !important; height: auto !important; padding: 0 24px !important; justify-content: flex-start !important; }
   .hero-title { font-size: clamp(44px, 15.5vw, 100px) !important; }
   .hero-subtitle { max-width: 32ch; font-size: clamp(14px, 3.6vw, 20px) !important; margin-top: 22px !important; }
-  .hero-desktop-action { margin-top: 24px !important; }
-  .hero-desktop-action a { min-height: 44px; padding: 12px 24px !important; font-size: 16px !important; }
   .hero-scroll { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); left: 24px; z-index: 10; display: flex; align-items: center; gap: 18px; min-height: 44px; color: #a9bcc6; font-size: 13px; letter-spacing: 0.08em; }
   .hero-scroll span { color: #7fd0a4; font-size: 22px; }
   .descent { margin-top: -100svh; padding-top: 0; }
@@ -614,7 +617,6 @@ picture { display: contents; }
   .hero-panel { top: 32svh !important; width: 52% !important; padding-left: 24px !important; }
   .hero-title { font-size: clamp(36px, 7vw, 64px) !important; }
   .hero-subtitle { font-size: 13px !important; margin-top: 18px !important; }
-  .hero-desktop-action { margin-top: 18px !important; }
   .hero-scroll { bottom: 8px; font-size: 12px; }
   .opening, .closing { padding-top: 96px; }
   .opening { min-height: 100svh; }
@@ -628,7 +630,6 @@ picture { display: contents; }
 @media (max-width: 720px) and (orientation: portrait) and (max-height: 650px) {
   .hero-panel { top: 88px !important; }
   .hero-subtitle { font-size: 13px !important; margin-top: 18px !important; }
-  .hero-desktop-action { margin-top: 16px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-track { height: auto; }
