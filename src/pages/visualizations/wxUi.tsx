@@ -9,7 +9,7 @@ export const PANEL: React.CSSProperties = {
 
 export function ColorScale({ scale, small }: { scale: Scale; small: boolean }) {
   // the bar shrinks on short windows so the key clears the controls above and below
-  const H = Math.max(160, Math.min(small ? 230 : 300, window.innerHeight - 260));
+  const H = small ? 'clamp(64px, calc(100dvh - 470px), 170px)' : 'clamp(80px, calc(100dvh - 260px), 300px)';
   let bar = null;
   let ticks: { frac: number; v: number }[] = [];
   if (scale.type === 'steps' && scale.bounds && scale.colors) {
@@ -37,6 +37,7 @@ export function ColorScale({ scale, small }: { scale: Scale; small: boolean }) {
     const { min = 0, max = 1 } = scale;
     ticks = Array.from({ length: 5 }, (_, i) => ({ frac: i / 4, v: min + ((max - min) * i) / 4 }));
   }
+  if (small && ticks.length > 5) ticks = Array.from({ length: 5 }, (_, i) => ticks[Math.round(i * (ticks.length - 1) / 4)]);
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : Math.abs(v) >= 10 ? String(Math.round(v)) : String(v));
   return (
     <div style={{ fontFamily: RESIPLE, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>

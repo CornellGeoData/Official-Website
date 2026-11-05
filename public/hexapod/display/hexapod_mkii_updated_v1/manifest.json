@@ -1,0 +1,484 @@
+{
+  "model": "hexapod_mkii_updated_v1",
+  "urdf_sha256": "9492fde54c50170e940b49ccb3037d7b413743a5b77bc1d8707a539d44349e78",
+  "totals": {
+    "source_bytes": 33604956,
+    "bytes": 2456056,
+    "source_triangle_instances": 21773958,
+    "triangle_instances": 1702618
+  },
+  "files": {
+    "mesh_058_top_enclosure.stl": {
+      "source_sha256": "99cf69d5dbb94cf7eb0e5fea47f22303506a612ed19d8499ff668b075de5c889",
+      "source_bytes": 3206584,
+      "bytes": 200084,
+      "source_triangles": 64130,
+      "triangles": 4000,
+      "instances": 1
+    },
+    "mesh_041_m4_countersunk_hex_drive_screw__12mm_l__alloy_steel.stl": {
+      "source_sha256": "af4173f3e78822da490cd0971e0ac4a2211d72ca943810ec24a28d1e17945622",
+      "source_bytes": 877284,
+      "bytes": 70284,
+      "source_triangles": 17544,
+      "triangles": 1404,
+      "instances": 60
+    },
+    "mesh_038_m3_low_profile_socket_head_screw__5mm_l__hs_steel.stl": {
+      "source_sha256": "bd088c8f570139fc0a0134a4f441800b23711bb9c882aa73b3635b2d7f66ef66",
+      "source_bytes": 869184,
+      "bytes": 69584,
+      "source_triangles": 17382,
+      "triangles": 1390,
+      "instances": 73
+    },
+    "mesh_036_m3_countersunk_hex_drive_screw__8mm_l__alloy_steel.stl": {
+      "source_sha256": "4ca7cdd28a861d966b2e4a666e91eeae07aa570eb7fcad736b5891683e8dbe65",
+      "source_bytes": 782084,
+      "bytes": 62584,
+      "source_triangles": 15640,
+      "triangles": 1250,
+      "instances": 36
+    },
+    "mesh_016_bottom_enclosure.stl": {
+      "source_sha256": "577f284a02841d5d7b3e52f78b618e26f1d7301e7e361ab8ed6cbc46aedf52dc",
+      "source_bytes": 3327484,
+      "bytes": 200084,
+      "source_triangles": 66548,
+      "triangles": 4000,
+      "instances": 1
+    },
+    "mesh_054_standoff_plate.stl": {
+      "source_sha256": "24e9b1cd37e1ae27ee51aea0d73fbb47f661ac28b2823fe53a1488650ca19c8c",
+      "source_bytes": 123884,
+      "bytes": 9984,
+      "source_triangles": 2476,
+      "triangles": 198,
+      "instances": 4
+    },
+    "mesh_048_pem_m4_self_clinching_nut__300_ss.stl": {
+      "source_sha256": "13f10e057e04aed43f65b635cb91c307a4fe6be6771aaa7ebbd83f48a3c4e096",
+      "source_bytes": 157084,
+      "bytes": 12584,
+      "source_triangles": 3140,
+      "triangles": 250,
+      "instances": 48
+    },
+    "mesh_017_bottom_plate.stl": {
+      "source_sha256": "64a57048a0e6f27170df6b0ee275208b8851f769a818b80dea2215fea3171ae5",
+      "source_bytes": 525084,
+      "bytes": 42084,
+      "source_triangles": 10500,
+      "triangles": 840,
+      "instances": 1
+    },
+    "mesh_043_m4_through_hole_standoff__8mm_l__hardened_steel.stl": {
+      "source_sha256": "6eb33897c1c30291ba1f140c86751bf109ec4c6e133cf26fa510c80115ea189e",
+      "source_bytes": 164984,
+      "bytes": 13284,
+      "source_triangles": 3298,
+      "triangles": 264,
+      "instances": 21
+    },
+    "mesh_055_standoff_plate__2.stl": {
+      "source_sha256": "f7898de852e9562a57d74a1ca63857ca0d59c371b8406421f7411552a52dc485",
+      "source_bytes": 91084,
+      "bytes": 7384,
+      "source_triangles": 1820,
+      "triangles": 146,
+      "instances": 2
+    },
+    "mesh_015_bearing_insert.stl": {
+      "source_sha256": "45c36d3fddca00476b7cc0bfb40d47e64b19b3db1493f8866bb84ab53d3dfeed",
+      "source_bytes": 184984,
+      "bytes": 14884,
+      "source_triangles": 3698,
+      "triangles": 296,
+      "instances": 18
+    },
+    "mesh_046_motor_flange.stl": {
+      "source_sha256": "0e990e0653a203b559bd031e64e3d1f15ecdb06f383608ca1d9edaffe1e5c08d",
+      "source_bytes": 184884,
+      "bytes": 14884,
+      "source_triangles": 3696,
+      "triangles": 296,
+      "instances": 18
+    },
+    "mesh_002_0001755652_1_1_30_gr_2202_asm_1_asm_1_1_30_gr_2202_asm_fl46blw10_.stl": {
+      "source_sha256": "b2fbb6b413174cce59b420fe76b85db7f1b6f1f19d49584a30caa9d55f7660aa",
+      "source_bytes": 279684,
+      "bytes": 22384,
+      "source_triangles": 5592,
+      "triangles": 446,
+      "instances": 36
+    },
+    "mesh_014_6706__300001_1_1_00mini_000_asm_1_asm_1_asm_00mini__20250103_a000.stl": {
+      "source_sha256": "cdd0a387fdf3d7227d420110985a9c5369134fe54fa1cd8785ae93753514041b",
+      "source_bytes": 612084,
+      "bytes": 48984,
+      "source_triangles": 12240,
+      "triangles": 978,
+      "instances": 18
+    },
+    "mesh_007_1_21_121000022__610001_1_1_00mini_000_asm_1_asm_1_asm_00mini__202.stl": {
+      "source_sha256": "6b4e18f3b1e7252c47f5049a500df73621ac854fb0a0dc20ad2cf6e8289da94a",
+      "source_bytes": 4037484,
+      "bytes": 200084,
+      "source_triangles": 80748,
+      "triangles": 4000,
+      "instances": 18
+    },
+    "mesh_001_0001755652_00mini_000_asm_1_asm_1_asm_00mini__20250103_a0001_asm_.stl": {
+      "source_sha256": "b2fbb6b413174cce59b420fe76b85db7f1b6f1f19d49584a30caa9d55f7660aa",
+      "source_bytes": 279684,
+      "bytes": 22384,
+      "source_triangles": 5592,
+      "triangles": 446,
+      "instances": 18
+    },
+    "mesh_000_0001755650_00mini_000_asm_1_asm_1_asm_00mini__20250103_a0001_asm_.stl": {
+      "source_sha256": "65ff49efc97eef3b18018844ea38a02da4407112beb2da089f43edde2ef2b276",
+      "source_bytes": 482484,
+      "bytes": 38684,
+      "source_triangles": 9648,
+      "triangles": 772,
+      "instances": 18
+    },
+    "mesh_033_first_joint_spacer.stl": {
+      "source_sha256": "1737efe4087c908611a78e225f5bb33e2d9bd8d6552ad26a1fad28bf06be3819",
+      "source_bytes": 75884,
+      "bytes": 6084,
+      "source_triangles": 1516,
+      "triangles": 120,
+      "instances": 6
+    },
+    "mesh_034_first_joint_top.stl": {
+      "source_sha256": "9f188bbebf8b1e265103965c808d8d56055575ac54f9c4ac01102c001e9c5003",
+      "source_bytes": 210084,
+      "bytes": 16884,
+      "source_triangles": 4200,
+      "triangles": 336,
+      "instances": 6
+    },
+    "mesh_037_m3_low_profile__socket_head_shoulder_screw__45mm_shoulder_l__4mm_.stl": {
+      "source_sha256": "3c91de171c7854c4d8053fd56dc1a4c19f45c2f12f3e5900894e5649cb68efd3",
+      "source_bytes": 1108284,
+      "bytes": 88684,
+      "source_triangles": 22164,
+      "triangles": 1772,
+      "instances": 12
+    },
+    "mesh_039_m3_low_profile_socket_head_screw__6mm_l__18_8_ss.stl": {
+      "source_sha256": "a532f0a42f108a4892206c88027747f6a7808d9e310cf53725ec740e1f437b02",
+      "source_bytes": 877384,
+      "bytes": 70284,
+      "source_triangles": 17546,
+      "triangles": 1404,
+      "instances": 96
+    },
+    "mesh_040_m3_low_profile_socket_head_screw__8mm_l__18_8_ss.stl": {
+      "source_sha256": "68a14befa8dab304beab13cdb1980e12b94f2a1c882aefdf747079687f570a3f",
+      "source_bytes": 1117684,
+      "bytes": 89484,
+      "source_triangles": 22352,
+      "triangles": 1788,
+      "instances": 144
+    },
+    "mesh_032_first_joint_bottom_plate.stl": {
+      "source_sha256": "e8edaf7744e3d2387bb9eb8cac00e8f2fc2b021e6b28c1b8c28d1b58b2f931f7",
+      "source_bytes": 407284,
+      "bytes": 32684,
+      "source_triangles": 8144,
+      "triangles": 652,
+      "instances": 6
+    },
+    "mesh_047_pem_bsos_m3_6____c8b4713a2b299da432156142d6d3e6d8.stl": {
+      "source_sha256": "2fa0abafe19db3fc3bd8f409bc9f4387a7ee288100cdd86f3b57128529f1d947",
+      "source_bytes": 109184,
+      "bytes": 8784,
+      "source_triangles": 2182,
+      "triangles": 174,
+      "instances": 12
+    },
+    "mesh_045_motor_bearing_holder.stl": {
+      "source_sha256": "9d21a29d2904cdc69469c79c0a3dc988c9257022729379b87b89cb1050bfcd18",
+      "source_bytes": 207484,
+      "bytes": 16684,
+      "source_triangles": 4148,
+      "triangles": 332,
+      "instances": 18
+    },
+    "mesh_035_hex_socket_head_countersunk_screw_grade_c_m3x0_5_x_10__1cb4a3dadc.stl": {
+      "source_sha256": "ad9009aea4f6cedf83d68a8b8e0f787dcb53144ba1ead3cc5f1181cd90cca34d",
+      "source_bytes": 109284,
+      "bytes": 8784,
+      "source_triangles": 2184,
+      "triangles": 174,
+      "instances": 72
+    },
+    "mesh_006_1_1_31_eb463_510_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__.stl": {
+      "source_sha256": "bb509ea5df373e1f9294e0dda120b27499e94a6b6cc420a0a9085b9e02a4d069",
+      "source_bytes": 441884,
+      "bytes": 35384,
+      "source_triangles": 8836,
+      "triangles": 706,
+      "instances": 18
+    },
+    "mesh_010_1_2_05_000608_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de_____.stl": {
+      "source_sha256": "7428d2fd077f9f9f57c16bfd3814b069e3e02a7c7e5485ed7d488eba1e748c41",
+      "source_bytes": 1384184,
+      "bytes": 110784,
+      "source_triangles": 27682,
+      "triangles": 2214,
+      "instances": 72
+    },
+    "mesh_009_1_2_05_000555_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de_____.stl": {
+      "source_sha256": "a6f88ff94087909c7380970d13a55dd711f23fdd69e8b127d147707726d5816f",
+      "source_bytes": 897684,
+      "bytes": 71884,
+      "source_triangles": 17952,
+      "triangles": 1436,
+      "instances": 144
+    },
+    "mesh_008_1_2_05_000438_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de_____.stl": {
+      "source_sha256": "76baaa1782cfd111b63365c0459f4c382a4ece0f47ca30982986ce8a46ea6736",
+      "source_bytes": 677084,
+      "bytes": 54184,
+      "source_triangles": 13540,
+      "triangles": 1082,
+      "instances": 144
+    },
+    "mesh_004_1_1_06_eb463_507_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__.stl": {
+      "source_sha256": "0dbae3b3712ea006e322d5b0342078357620521c4004a444bb17255c7ce555bd",
+      "source_bytes": 477284,
+      "bytes": 38284,
+      "source_triangles": 9544,
+      "triangles": 764,
+      "instances": 18
+    },
+    "mesh_005_1_1_06_eb463_509_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__.stl": {
+      "source_sha256": "8d0d72ea395b317620564bc018764de28af38a7f632fb0f91c4309b57bbb2c95",
+      "source_bytes": 512884,
+      "bytes": 41084,
+      "source_triangles": 10256,
+      "triangles": 820,
+      "instances": 18
+    },
+    "mesh_003_1_1_02_eb461_502_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__.stl": {
+      "source_sha256": "15ce5d3d8db9bcd2a520c5dac8180e213b924bfe7f107aeb9aae53adfbd888bf",
+      "source_bytes": 601684,
+      "bytes": 48184,
+      "source_triangles": 12032,
+      "triangles": 962,
+      "instances": 18
+    },
+    "mesh_013_1_2_16_001425_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de_____.stl": {
+      "source_sha256": "2be3df7c6312e2fa26620cd97e8bf8495615ac8e7a5813eef419683df1c46986",
+      "source_bytes": 1068084,
+      "bytes": 85484,
+      "source_triangles": 21360,
+      "triangles": 1708,
+      "instances": 18
+    },
+    "mesh_049_revolve1_1.stl": {
+      "source_sha256": "43926dfae947a6f4e92124ab4fd8739fa53890f0da1fc9753018790ea2a86887",
+      "source_bytes": 180084,
+      "bytes": 14484,
+      "source_triangles": 3600,
+      "triangles": 288,
+      "instances": 18
+    },
+    "mesh_027_cirpattern1_7.stl": {
+      "source_sha256": "65cf84b2cb3b4909efca001b9bd1ea5456e2c2f3e1194df7f160dfa469614ace",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_052_revolve3_1.stl": {
+      "source_sha256": "c743835c1cf2c244a386346ef58434c5937fe756a7c721e58163d6a0cd6efdbb",
+      "source_bytes": 50484,
+      "bytes": 6084,
+      "source_triangles": 1008,
+      "triangles": 120,
+      "instances": 18
+    },
+    "mesh_028_cirpattern1_8.stl": {
+      "source_sha256": "174d7af35adcb2ce132253595bd951e2f02f3d2381f15a93471830c4103c1c6e",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_020_cirpattern1_11.stl": {
+      "source_sha256": "66422b214fa38c89b5eb0589d78438d74aef925e0204931f711d6598c9fe9c95",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_030_cirpattern2.stl": {
+      "source_sha256": "c05e482f8a5f8bb0732f031edbd822c8ca9ecec403a65c3bae909f550da8ade6",
+      "source_bytes": 401084,
+      "bytes": 32184,
+      "source_triangles": 8020,
+      "triangles": 642,
+      "instances": 18
+    },
+    "mesh_029_cirpattern1_9.stl": {
+      "source_sha256": "63e769487fc819984b911823c12d97e0b47c703fc8541cb2b3ba1f72d1c5c995",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_023_cirpattern1_3.stl": {
+      "source_sha256": "ac9634ae0f60e903d15579c0e98ff7bb41184b013269623f573508f1a3d3f2fb",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_026_cirpattern1_6.stl": {
+      "source_sha256": "992ff44896cb30e0e74adc3a40ca0e27b02eba92a94dac9d12a501936817f512",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_025_cirpattern1_5.stl": {
+      "source_sha256": "f6fcc50d9185646aa9feff37a5e4fcdd7293b18333b4ff024f255523691ac0d9",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_050_revolve1_2.stl": {
+      "source_sha256": "9bceb2cd1ff8bd3a9486066fc579c6ad15bc30dd90be932b22e0549b66bff1c9",
+      "source_bytes": 151284,
+      "bytes": 12184,
+      "source_triangles": 3024,
+      "triangles": 242,
+      "instances": 18
+    },
+    "mesh_051_revolve2.stl": {
+      "source_sha256": "1386f9709e57e58c25caf13b918e95cfd5f522502edc9e302c41787a7d36663b",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_021_cirpattern1_12.stl": {
+      "source_sha256": "b5a54b3c38576eaa393af7649f1b93bc5f7e3542ab001ba754650b28562a1c2a",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_018_cirpattern1_1.stl": {
+      "source_sha256": "68c053f7bd27e071c5bb0671ebffe2fc708f60bf8f346db2aead961d246aadbf",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_022_cirpattern1_2.stl": {
+      "source_sha256": "830a95b1632cb708e40b5cb7489e0d12267352040516e634abad18d4e8330df5",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_024_cirpattern1_4.stl": {
+      "source_sha256": "68b33c52393b826c1e1933bf7323219699ab97fb36e2778c412968be018f8705",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_053_revolve3_2.stl": {
+      "source_sha256": "be8b73b04f231277e33f61ebdb11f1d26aec0bf77f48a1d0ca1b72203289315b",
+      "source_bytes": 50484,
+      "bytes": 6084,
+      "source_triangles": 1008,
+      "triangles": 120,
+      "instances": 18
+    },
+    "mesh_044_mirror1.stl": {
+      "source_sha256": "6cee806302f3fea851c1fee027157485c7699279611a6492fb402426d9ec240f",
+      "source_bytes": 401084,
+      "bytes": 32184,
+      "source_triangles": 8020,
+      "triangles": 642,
+      "instances": 18
+    },
+    "mesh_019_cirpattern1_10.stl": {
+      "source_sha256": "687f9b525bc4264eb94902b4bcce7ca8914c29efe187074f552107684a008590",
+      "source_bytes": 252084,
+      "bytes": 20184,
+      "source_triangles": 5040,
+      "triangles": 402,
+      "instances": 18
+    },
+    "mesh_011_1_2_05_020051_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__non.stl": {
+      "source_sha256": "d6543865ca567612644b4a300cf456b359463b135ad89b0953b38c761d311fd0",
+      "source_bytes": 56384,
+      "bytes": 6084,
+      "source_triangles": 1126,
+      "triangles": 120,
+      "instances": 54
+    },
+    "mesh_012_1_2_05_020051_fl46blw10_48v_5n_m_de_2__fl46blw10_48v_5n_m_de__non.stl": {
+      "source_sha256": "1186bee12f86dc569fba008f5d9723e9517a7b16ee196b22855cf7926e2be793",
+      "source_bytes": 14684,
+      "bytes": 6084,
+      "source_triangles": 292,
+      "triangles": 120,
+      "instances": 54
+    },
+    "mesh_057_tibia_attatchment_plate.stl": {
+      "source_sha256": "0ec429f1a53ec026d6273e989daeb742b112589833f8cdc92efec821ca04ec2a",
+      "source_bytes": 317484,
+      "bytes": 25484,
+      "source_triangles": 6348,
+      "triangles": 508,
+      "instances": 6
+    },
+    "mesh_042_m4_low_profile_socket_head_screw__8mm_l__18_8_ss.stl": {
+      "source_sha256": "a94924be1256ddf9025ba2a1de4d9f35ac1feed2964b5d7b40d82417b903251d",
+      "source_bytes": 811384,
+      "bytes": 64984,
+      "source_triangles": 16226,
+      "triangles": 1298,
+      "instances": 72
+    },
+    "mesh_031_femur_first_stage.stl": {
+      "source_sha256": "551308e14c4f0c00f7912e65553232c53539c2fb5a3206854ef1905f9a403601",
+      "source_bytes": 269484,
+      "bytes": 21584,
+      "source_triangles": 5388,
+      "triangles": 430,
+      "instances": 6
+    },
+    "mesh_056_tibia.stl": {
+      "source_sha256": "40f2e91ad5ebb4d852745381da9a3788f13ccd9dad6d403c65724472ecfc2b33",
+      "source_bytes": 1154584,
+      "bytes": 92384,
+      "source_triangles": 23090,
+      "triangles": 1846,
+      "instances": 6
+    }
+  }
+}

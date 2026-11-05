@@ -64,8 +64,8 @@ outside weather data, the team's model tuning, and local observations.
 - [Explore our projects](https://cornellgeodata.com/#projects)
 - [Meet our members](https://cornellgeodata.com/#/members)
 - [Read project updates](https://cornellgeodata.com/#/posts)
-- [Join GeoData](https://cornellgeodata.com/#join)
-- [Support the team](https://cornellgeodata.com/#/sponsors)
+- [Support the team](https://cornellgeodata.com/#support)
+- [Become a sponsor](https://cornellgeodata.com/#/sponsors)
 
 Questions or feedback? [Contact the team](mailto:cugeodata@cornell.edu).
 
@@ -79,7 +79,7 @@ Page components stay together by feature:
 | Sponsorship page and alumni display | [src/pages/sponsors/](src/pages/sponsors/) |
 | Sensor map, charts, and weather forecast | [src/pages/visualizations/](src/pages/visualizations/) |
 | Member and blog pages | [MembersPage.tsx](src/pages/MembersPage.tsx), [PostsPage.tsx](src/pages/PostsPage.tsx) |
-| Projects, posts, roster, and recruitment dates | [src/data/](src/data/) |
+| Projects, posts, roster, and crowdfunding details | [src/data/](src/data/) |
 | Shared fonts, colors, and styles | [src/styles/](src/styles/) |
 | Ithaca LiDAR viewer | [src/viewers/lidar/](src/viewers/lidar/) |
 | Interactive hexapod viewer | [src/viewers/hexapod/](src/viewers/hexapod/) |

@@ -1,0 +1,152 @@
+[
+  {
+    "name": "Iris Johnson",
+    "subteam": "Air",
+    "photo": "",
+    "email": "iaj23@cornell.edu",
+    "major": "Earth and Climate Sciences",
+    "linkedin": "https://www.linkedin.com/in/iris-johnson-091670397"
+  },
+  {
+    "name": "Nathan Han",
+    "subteam": "Air",
+    "photo": "",
+    "email": "nbh38@cornell.edu",
+    "major": "Atmospheric Science"
+  },
+  {
+    "name": "Ema West",
+    "subteam": "Air",
+    "photo": "",
+    "email": "elw242@cornell.edu",
+    "major": "Atmospheric Science"
+  },
+  {
+    "name": "Woodford Pollach",
+    "subteam": "Water",
+    "photo": "",
+    "email": "wmp49@cornell.edu",
+    "major": "Environmental Engineering",
+    "badge": "Tech"
+  },
+  {
+    "name": "Vivian Huang",
+    "subteam": "Water",
+    "photo": "",
+    "email": "vyh6@cornell.edu",
+    "major": "Environmental Engineering"
+  },
+  {
+    "name": "Henry Hirsch",
+    "subteam": "Water",
+    "photo": "",
+    "email": "hih7@cornell.edu",
+    "major": "Earth and Climate Sciences"
+  },
+  {
+    "name": "Kim Gerald Doca Garcia",
+    "subteam": "Water",
+    "photo": "",
+    "email": "kdg57@cornell.edu",
+    "major": "Environment and Sustainability and Landscape Architecture"
+  },
+  {
+    "name": "Anna Malikov",
+    "subteam": "Water",
+    "photo": "",
+    "email": "am3597@cornell.edu",
+    "major": "Biological Sciences"
+  },
+  {
+    "name": "Alex Yu",
+    "subteam": "Rock",
+    "photo": "",
+    "email": "ary28@cornell.edu",
+    "major": "Environment & Sustainability, Information Science",
+    "linkedin": "https://www.linkedin.com/in/alexander-yu5678"
+  },
+  {
+    "name": "Erika Chiu",
+    "subteam": "Data",
+    "photo": "",
+    "email": "ec2232@cornell.edu",
+    "major": "Computer Science & Statistical Science",
+    "linkedin": "https://www.linkedin.com/in/erikachiu/"
+  },
+  {
+    "name": "Zeeshan Shariff",
+    "subteam": "Data",
+    "photo": "",
+    "email": "zs523@cornell.edu",
+    "major": "Computer Science & Information Science"
+  },
+  {
+    "name": "Aayush Bansod",
+    "subteam": "Data",
+    "photo": "",
+    "email": "amb749@cornell.edu",
+    "major": "Operations Research & Information Engineering / Mechanical Engineering",
+    "linkedin": "https://www.linkedin.com/in/aayush-bansod/"
+  },
+  {
+    "name": "Jason Zhang",
+    "subteam": "Data",
+    "photo": "",
+    "email": "jz2532@cornell.edu",
+    "major": "Physics & Computer Science",
+    "website": "https://jzcpinfinity.github.io/",
+    "linkedin": "https://www.linkedin.com/in/jason-zhang-b90b242a8/",
+    "github": "https://github.com/jzcpinfinity"
+  },
+  {
+    "name": "Woodford Pollach",
+    "subteam": "Tech",
+    "photo": "",
+    "email": "wmp49@cornell.edu",
+    "major": "Environmental Engineering",
+    "badge": "Water"
+  },
+  {
+    "name": "Qianheng (Hendry) Xu",
+    "subteam": "Tech",
+    "photo": "",
+    "email": "qx235@cornell.edu",
+    "major": "Computer Science & Mathematics",
+    "website": "https://internetguy.dev/",
+    "github": "https://github.com/justanotherinternetguy",
+    "linkedin": "https://www.linkedin.com/in/hendryxu/"
+  },
+  {
+    "name": "Lennox Schmid",
+    "subteam": "Tech",
+    "photo": "",
+    "email": "lls226@cornell.edu",
+    "major": "Mechanical Engineering / Computer Science",
+    "website": "https://petal-periodical-770.notion.site/Lennox-Schmid-Project-Page-3fb5057ead2780f0a290dd6be009e9ef",
+    "websiteLabel": "Project portfolio",
+    "linkedin": "https://www.linkedin.com/in/lennox-schmid-6751a9338"
+  },
+  {
+    "name": "Austin Hollasch",
+    "subteam": "Business",
+    "photo": "",
+    "email": "akh237@cornell.edu",
+    "major": "Operations Research and Information Engineering",
+    "linkedin": "https://www.linkedin.com/in/austin-hollasch-a7a772315"
+  },
+  {
+    "name": "Michelle Cheng",
+    "subteam": "Business",
+    "photo": "",
+    "email": "mc3274@cornell.edu",
+    "major": "Food Science (Business Concentration)",
+    "linkedin": "https://www.linkedin.com/in/michelle-cheng3"
+  },
+  {
+    "name": "Joyce Tian",
+    "subteam": "Business",
+    "photo": "",
+    "email": "jt998@cornell.edu",
+    "major": "Biometry & Statistics"
+  }
+]

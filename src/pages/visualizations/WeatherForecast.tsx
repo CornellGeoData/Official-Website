@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import TileMap, { type MapTarget, type Overlay } from './TileMap';
 import type { MapSite } from './sensorData';
+import { useCompactViewport } from './useCompactViewport';
 import { RESIPLE } from '../../styles/theme';
 import { WX_BASE, fetchManifest, readWeatherValues, loadImage, type Frame, type Scale, type WxLayer, type Manifest } from './wxClient';
 
@@ -14,8 +15,7 @@ const LIGHT_TILES = (z: number, x: number, y: number) =>
   `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`;
 
 // Initial position before the selected feed's full grid arrives.
-const INITIAL_SMALL = window.matchMedia('(max-width: 720px)').matches;
-const HOME = { lat: 42.75, lon: -76.6, zoom: INITIAL_SMALL ? 8.2 : 9 };
+const HOME = { lat: 42.75, lon: -76.6, zoom: 9 };
 
 // fallback when the manifest doesn't publish its own group_order
 const DEFAULT_GROUP_ORDER = ['StormCast', 'Nowcast', 'MRMS', 'HRRR'];
@@ -27,7 +27,7 @@ const HALO = '0 0 4px rgba(255,255,255,0.95), 0 0 2px rgba(255,255,255,0.9)';
 function ColorScale({ scale, small }: { scale: Scale; small: boolean }) {
   // the bar shrinks on short windows so the key clears the launcher button
   // above and the timebar below
-  const H = Math.max(160, Math.min(small ? 230 : 300, window.innerHeight - 260));
+  const H = small ? 'clamp(72px, calc(100dvh - 430px), 190px)' : 'clamp(80px, calc(100dvh - 260px), 300px)';
   const ring = '0 0 0 1px rgba(255,255,255,0.9), 0 1px 4px rgba(0,0,0,0.5)';
   let bar = null;
   let ticks: { frac: number; v: number }[] = [];
@@ -38,13 +38,14 @@ function ColorScale({ scale, small }: { scale: Scale; small: boolean }) {
         {scale.colors.map((c, i) => <span key={i} style={{ flex: 1, background: c }} />)}
       </div>
     );
-    const every = scale.bounds.length > 12 ? 2 : 1;
-    ticks = scale.bounds.map((v, i) => ({ frac: i / n, v })).filter((_, i) => i % every === 0);
+    const every = !small && scale.bounds.length > 12 ? 2 : 1;
+    ticks = scale.bounds.map((v, i) => ({ frac: i / n, v })).filter((_, i, all) => i % every === 0 || i === all.length - 1);
   } else if (scale.type === 'gradient' && scale.stops) {
     bar = <div style={{ width: 10, height: H, background: `linear-gradient(to top, ${scale.stops.join(',')})`, boxShadow: ring }} />;
     const { min = 0, max = 1 } = scale;
     ticks = Array.from({ length: 5 }, (_, i) => ({ frac: i / 4, v: min + ((max - min) * i) / 4 }));
   }
+  if (small && ticks.length > 5) ticks = Array.from({ length: 5 }, (_, i) => ticks[Math.round(i * (ticks.length - 1) / 4)]);
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : Math.abs(v) >= 10 ? String(Math.round(v)) : String(v));
   return (
     <div style={{ fontFamily: RESIPLE, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -76,15 +77,23 @@ const PANEL: React.CSSProperties = {
 const CSS = `
 .wxview button,.wxview input{-webkit-tap-highlight-color:transparent}
 .wxview ::-webkit-scrollbar{display:none}
-.wxbox{appearance:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:124px;min-height:32px;padding:6px 10px;background:rgba(14,20,28,0.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.25);color:#e6ecf0;font-family:${RESIPLE};font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:border-color .15s}
-.wxbox:hover,.wxbox[aria-expanded=true]{border-color:rgba(255,255,255,.6)}
-.wxbox svg{transition:transform .2s}
-.wxbox[aria-expanded=true] svg{transform:rotate(180deg)}
-.wxopt{appearance:none;display:flex;justify-content:space-between;align-items:baseline;gap:16px;width:100%;padding:7px 10px;background:transparent;border:0;color:#e6ecf0;font:inherit;letter-spacing:.08em;text-transform:uppercase;text-align:left;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s}
-.wxopt:hover{background:rgba(255,255,255,.1)}
-.wxopt[aria-selected=true]{background:#e6ecf0;color:#0e141c}
-.wxopt small{font-size:10px;letter-spacing:.02em;text-transform:none;opacity:.6}
-.wxbox:focus-visible,.wxopt:focus-visible{outline:1px solid #e6ecf0;outline-offset:2px}
+.wxbox{display:block;min-width:124px;height:44px;max-width:100%;background:#141c26;border:1px solid rgba(255,255,255,.5);color:#e6ecf0;font-family:${RESIPLE};font-size:16px;cursor:pointer;color-scheme:dark}
+.wxbox:hover{border-color:rgba(255,255,255,.8)}
+.wxview :is(button,select,input):focus-visible{outline:2px solid #e6ecf0;outline-offset:3px}
+.wxpickers{display:flex;gap:8px;align-items:flex-start}
+.wx-compact .wxpickers{display:grid;grid-template-columns:auto minmax(0,1fr)}
+.wx-compact .wxbox{min-width:0;width:100%}
+.wx-compact .wx-time-range{height:44px;width:100%}
+.wx-compact .wx-time-range::-webkit-slider-thumb{width:24px;height:24px}
+@media(max-width:440px){.wx-compact .wxpickers{grid-template-columns:minmax(0,1fr)}}
+@media(min-width:480px) and (max-height:500px){
+  .wx-compact .wx-time-grid{grid-template-columns:44px minmax(0,1fr) 44px!important}
+  .wx-compact .wx-time-grid>button{grid-row:2!important}
+  .wx-compact .wx-time-range{grid-column:2!important;grid-row:2!important}
+  .wx-compact .wx-time-valid{grid-column:1/-1!important;grid-row:1!important;font-size:12px!important}
+  .wx-compact .wx-time-ends{display:none!important}
+  .wx-compact .wx-legend{top:84px!important;transform:none!important}
+}
 `;
 // play and Now: one height, one border, so they sit on the slider's line
 const BAR_BOX: React.CSSProperties = {
@@ -93,34 +102,15 @@ const BAR_BOX: React.CSSProperties = {
   letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
 };
 
-const Chevron = () => (
-  <svg width="9" height="6" viewBox="0 0 9 6" aria-hidden><path d="M1 1l3.5 3.5L8 1" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>
-);
-
-// a caption on the map, one box holding the current value, and a list that
-// drops over the map with every option, current one inverted
-function Picker({ label, valueId, options, open, onToggle, onPick }: {
+function Picker({ label, valueId, options, onPick }: {
   label: string; valueId: string;
   options: { id: string; label: string; sub?: string }[];
-  open: boolean; onToggle: () => void; onPick: (id: string) => void;
+  onPick: (id: string) => void;
 }) {
-  const current = options.find((o) => o.id === valueId);
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ fontFamily: RESIPLE, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#0e141c', textShadow: HALO, marginBottom: 4 }}>{label}</div>
-      <button className="wxbox" onClick={onToggle} aria-haspopup="listbox" aria-expanded={open}>
-        {current?.label ?? ''}<Chevron />
-      </button>
-      {open && (
-        <div role="listbox" aria-label={label} style={{ ...PANEL, position: 'absolute', top: '100%', left: 0, marginTop: 4, minWidth: '100%', fontSize: 11.5, padding: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {options.map((o) => (
-            <button key={o.id} className="wxopt" role="option" aria-selected={o.id === valueId} onClick={() => onPick(o.id)}>
-              {o.label}{o.sub && <small>{o.sub}</small>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <select className="wxbox" aria-label={label} value={valueId} onChange={(e) => onPick(e.target.value)}>
+      {options.map((o) => <option key={o.id} value={o.id}>{o.label}{o.sub ? ` (${o.sub})` : ''}</option>)}
+    </select>
   );
 }
 
@@ -156,13 +146,7 @@ function nearestFrame(frames: { valid: string }[], time: number): number {
 
 
 export default function WeatherForecast() {
-  const [small, setSmall] = useState(INITIAL_SMALL);
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 720px)');
-    const resize = () => setSmall(media.matches);
-    media.addEventListener('change', resize);
-    return () => media.removeEventListener('change', resize);
-  }, []);
+  const small = useCompactViewport();
   const [manifest, setManifest] = useState<Manifest | 'loading' | 'error'>('loading');
   const [layerId, setLayerId] = useState<string | null>(null);
   const [requestedTime, setRequestedTime] = useState<number | null>(null);
@@ -199,11 +183,8 @@ export default function WeatherForecast() {
     return () => { alive = false; clearInterval(interval); document.removeEventListener('visibilitychange', refresh); };
   }, [retry]);
 
-  // phones carry the four layers that read at that size; accumulation surfaces
-  // (precip, snow) need the legend and the wide map to mean anything
   const layers = typeof manifest === 'object' ? manifest.layers.filter(l =>
-    !['stormcast_rain', 'stormcast_precip'].includes(l.id) && l.frames.length > 0
-    && !(small && ['precip', 'snow'].includes(l.id)))
+    !['stormcast_rain', 'stormcast_precip'].includes(l.id) && l.frames.length > 0)
     .sort((a, b) => Number(b.id.endsWith('refc')) - Number(a.id.endsWith('refc'))) : [];
   const layer = layers.find(l => l.id === layerId) ?? layers.find(l => l.id === 'stormcast_refc') ?? layers.find(l => l.id === 'radar_refc') ?? layers[0] ?? null;
   const groupOf = (l: WxLayer) => l.group ??
@@ -218,20 +199,6 @@ export default function WeatherForecast() {
   const idx = layer ? nearestFrame(layer.frames, requestedTime ?? now) : 0;
   const selectedFrame = layer?.frames[idx];
 
-  // the Model/Variable picker columns: only one unfolds at a time, and a
-  // click anywhere outside them folds whichever is open, like a native select
-  const [openPicker, setOpenPicker] = useState<'model' | 'variable' | null>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!openPicker) return;
-    const onDown = (e: PointerEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setOpenPicker(null);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenPicker(null); };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey); };
-  }, [openPicker]);
   // "next 48h" / "past 2h" from the group's own frames, so it never goes stale
   const horizon = (g: string) => {
     const l = layers.find((x) => groupOf(x) === g);
@@ -277,7 +244,7 @@ export default function WeatherForecast() {
     : [];
 
   // the map wants a target; the forecast stage just parks on the region
-  const target = useRef<MapTarget>({ ...HOME, nonce: 0 }).current;
+  const target = useRef<MapTarget>({ ...HOME, zoom: small ? 8.2 : 9, nonce: 0 }).current;
 
 
   // the number under the probe for the active layer+frame; fetches the frame's
@@ -315,7 +282,7 @@ export default function WeatherForecast() {
   return (
     // userSelect none inherits everywhere: no long-press text selection or
     // copy callouts on chips, labels, scales, or the map - it's an app, not a page
-    <div className="wxview" style={{ position: 'absolute', inset: 0, background: '#e8e8e6', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+    <div className={`wxview${small ? ' wx-compact' : ''}`} style={{ position: 'absolute', inset: 0, background: '#e8e8e6', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
       <style>{CSS}</style>
       <TileMap
         sites={probeSites}
@@ -324,7 +291,7 @@ export default function WeatherForecast() {
         onPick={(lat, lon) => setProbe({ lat, lon })}
         showLegend={false}
         target={target}
-        initial={HOME}
+        initial={target}
         dur={1}
         tileUrl={LIGHT_TILES}
         attribution={`Basemap: CARTO${layer ? `. ${sourceLabel(layer.source)}` : ''}`}
@@ -337,31 +304,27 @@ export default function WeatherForecast() {
       {/* top-left: model + variable pickers - the run provenance and current
           selection read out in the bar below instead, so this stays small no
           matter how many models/variables we add */}
-      <div style={{ position: 'absolute', top: small ? 18 : 24, left: small ? 12 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 'calc(100vw - 74px)' : 'calc(100% - 110px)' }}>
+      <div style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', left: 'max(12px, env(safe-area-inset-left))', right: small ? 'calc(max(12px, env(safe-area-inset-right)) + 56px)' : undefined, zIndex: 4, display: 'flex', flexDirection: 'column', gap: 7, maxWidth: small ? 460 : 'calc(100% - 110px)' }}>
         {layers.length > 0 && (
-          <div ref={pickerRef} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div className="wxpickers">
             <Picker
               label="Model"
               valueId={shownGroup ?? ''}
               options={groups.map((g) => ({ id: g, label: GROUP_NAME[g] ?? g, sub: horizon(g) }))}
-              open={openPicker === 'model'}
-              onToggle={() => setOpenPicker(openPicker === 'model' ? null : 'model')}
-              onPick={(g) => { setOpenGroup(g); setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null); setOpenPicker(null); }}
+              onPick={(g) => { setOpenGroup(g); setLayerId(layers.find(l => groupOf(l) === g)?.id ?? null); }}
             />
             <Picker
               label="Variable"
               valueId={layer?.id ?? ''}
               options={layers.filter((l) => groupOf(l) === shownGroup).map((l) => ({ id: l.id, label: l.label.replace(new RegExp(`^${groupOf(l)} `), '') }))}
-              open={openPicker === 'variable'}
-              onToggle={() => setOpenPicker(openPicker === 'variable' ? null : 'variable')}
-              onPick={(id) => { setLayerId(id); setOpenPicker(null); }}
+              onPick={setLayerId}
             />
           </div>
         )}
         {(refreshError || imageError) && (
           <div role="status" style={{ fontFamily: RESIPLE, color: '#3d4a55', textShadow: HALO, fontSize: 11 }}>
             {refreshError ? 'Feed refresh failed.' : 'This frame is unavailable.'}{' '}
-            <button onClick={() => { valueCache.clear(); setRetry(n => n + 1); }} style={{ appearance: 'none', background: 'none', border: 0, color: 'inherit', font: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>Retry</button>
+            <button onClick={() => { valueCache.clear(); setRetry(n => n + 1); }} style={{ appearance: 'none', background: 'none', border: 0, minHeight: 44, padding: '0 8px', color: 'inherit', font: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>Retry</button>
           </div>
         )}
         {typeof manifest === 'object' && manifest.status?.degraded && layer && ['Nowcast', 'MRMS'].includes(groupOf(layer)) && (
@@ -373,7 +336,7 @@ export default function WeatherForecast() {
           centred vertically now that the launcher opens as a panel, not a
           dropdown that could reach it */}
       {displayed?.layer.scale && (
-        <div style={{ position: 'absolute', right: small ? 14 : 26, top: '50%', transform: 'translateY(-50%)', zIndex: 4, pointerEvents: 'none' }}>
+        <div className="wx-legend" style={{ position: 'absolute', right: 'max(12px, env(safe-area-inset-right))', top: small ? '44%' : '50%', transform: 'translateY(-50%)', zIndex: 4, pointerEvents: 'none' }}>
           <ColorScale small={small} scale={displayed.layer.scale} />
         </div>
       )}
@@ -381,7 +344,7 @@ export default function WeatherForecast() {
       {/* bottom-center: the timebar. The pickers name the model and variable
           and the attribution names the source, so the top line is only the run time */}
       {layer && (
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 24 : 28, zIndex: 4, ...PANEL, padding: '7px 12px 6px', width: 'min(600px, calc(100vw - 24px))' }}>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 'max(12px, env(safe-area-inset-bottom))', zIndex: 4, ...PANEL, padding: '7px 12px 6px', width: 'min(600px, calc(100% - max(24px, env(safe-area-inset-left) + env(safe-area-inset-right))))' }}>
           {layer.init && (
             <div style={{ fontSize: 10, color: '#8fa0ab', marginBottom: 5 }}>
               {layer.kind === 'obs' ? 'Updated' : 'Run'} {fmtValidDated(layer.init)}
@@ -389,13 +352,13 @@ export default function WeatherForecast() {
             </div>
           )}
           {layer.frames.length > 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', columnGap: 8, alignItems: 'center' }}>
+            <div className="wx-time-grid" style={{ display: 'grid', gridTemplateColumns: small ? '44px minmax(0, 1fr) auto' : 'auto 1fr auto auto', columnGap: 8, alignItems: 'center' }}>
               <button
                 onClick={() => setPlaying((p) => !p)}
                 aria-pressed={playing}
                 aria-label={playing ? 'Pause animation' : 'Play animation'}
                 title={playing ? 'Pause' : 'Play'}
-                style={{ ...BAR_BOX, width: 26, background: playing ? 'rgba(255,255,255,0.16)' : 'transparent' }}
+                style={{ ...BAR_BOX, width: small ? 44 : 26, height: small ? 44 : 26, gridColumn: 1, gridRow: 1, background: playing ? 'rgba(255,255,255,0.16)' : 'transparent' }}
               >
                 {/* svg, not ▶/❚❚ text: glyphs sit at different heights per font */}
                 <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
@@ -404,6 +367,7 @@ export default function WeatherForecast() {
               </button>
               <input
                 type="range"
+                className="wx-time-range"
                 min={0}
                 max={layer.frames.length - 1}
                 step={1}
@@ -411,20 +375,20 @@ export default function WeatherForecast() {
                 onChange={(e) => { setPlaying(false); setRequestedTime(Date.parse(layer.frames[Number(e.target.value)].valid)); }}
                 aria-label="Forecast valid time"
                 aria-valuetext={fmtValid(layer.frames[idx].valid)}
-                style={{ gridColumn: 2, minWidth: 0, margin: 0, accentColor: '#e6ecf0' }}
+                style={{ gridColumn: small ? '1 / -1' : 2, gridRow: small ? 2 : 1, minWidth: 0, margin: 0, accentColor: '#e6ecf0' }}
               />
               {/* fixed width, not auto: the grid's 1fr slider column would
                   otherwise resize with every frame as this string's length changes */}
-              <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', textAlign: 'right', width: '17ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
+              <span className="wx-time-valid" style={{ gridColumn: small ? 2 : 3, gridRow: 1, fontSize: small ? 13 : 11.5, whiteSpace: small ? 'normal' : 'nowrap', textAlign: small ? 'center' : 'right', width: small ? undefined : '17ch' }}>{fmtValid(displayed?.frame.valid ?? layer.frames[idx].valid)}</span>
               <button
                 onClick={() => { setPlaying(false); setNow(Date.now()); setRequestedTime(null); }}
                 aria-pressed={requestedTime === null}
                 title="Jump to the current time"
-                style={{ ...BAR_BOX, padding: '0 8px', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
+                style={{ ...BAR_BOX, gridColumn: small ? 3 : 4, gridRow: 1, minWidth: small ? 44 : undefined, height: small ? 44 : 26, padding: '0 8px', color: requestedTime === null ? '#0e141c' : '#e6ecf0',
                   background: requestedTime === null ? '#e6ecf0' : 'transparent' }}
               >Now</button>
               {/* aligned to the slider's own grid column, not the row's full width */}
-              <div style={{ gridColumn: 2, display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#8fa0ab', marginTop: 1 }}>
+              <div className="wx-time-ends" style={{ gridColumn: small ? '1 / -1' : 2, gridRow: small ? 3 : 2, display: 'flex', justifyContent: 'space-between', fontSize: small ? 11 : 9.5, color: '#a9b7c0', marginTop: 1 }}>
                 <span>{fmtValidShort(layer.frames[0].valid, small)}</span>
                 <span>{fmtValidShort(layer.frames[layer.frames.length - 1].valid, small)}</span>
               </div>

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import express from 'express';
 import { wxVerifyRouter, warmObservations } from './server/wxVerify.mjs';
+import { crowdfundingHandler } from './server/crowdfunding.mjs';
 
 // serves dist/ and proxies the Air Quality Egg API so the key stays server-side.
 // EGG_SERIAL and EGG_API_KEY live in the host's environment (Railway), never in the repo.
@@ -47,6 +48,8 @@ app.get('/api/aqi', async (_req, res) => {
   }
 });
 
+app.get('/api/crowdfunding', crowdfundingHandler);
+
 // the eggs' lifetime archive: same re-keying as /api/aqi, but a year deep and
 // refreshed every 6h - the history only grows at the margin
 let eggLife = { t: 0, p: null };
@@ -84,7 +87,7 @@ app.get('/api/aqi-lifetime', async (_req, res) => {
 // the Soilmote lifetime archive: Zynect takes ~a minute to assemble it, so one
 // upstream fetch is shared by all visitors and refreshed every 6h. Serials must
 // match SOILMOTES in src/pages/visualizations/sensorData.ts (internal ids, not portal aliases).
-const SOIL_SERIALS = ['egge82d1055169daf2b'];
+const SOIL_SERIALS = ['eggba7714fb1f826a6a', 'egg6489edb8c8318336'];
 let soilLife = { t: 0, p: null };
 app.get('/api/soil-lifetime', async (_req, res) => {
   if (!soilLife.p || Date.now() - soilLife.t > 6 * 3600_000) {
@@ -176,14 +179,13 @@ app.use((req, res, next) => {
   res.sendFile(file);
 });
 
-// long cache for static assets; html stays no-cache so deploys show up immediately
+// Only content-hashed files may be cached forever. Everything else keeps its name when it changes
+// (art, fonts, photos), so browsers check back and get a cheap 304 until it really does change.
 app.use(express.static('dist', {
   etag: true,
-  maxAge: '30d',
   setHeaders: (res, p) => {
-    if (p.endsWith('.html') || p.endsWith(`${path.sep}lidar${path.sep}metadata.json`)) res.set('cache-control', 'no-cache');
-    else if (/[/\\]lidar[/\\][a-f0-9]{12}[/\\]/.test(p)) res.set('cache-control', 'public, max-age=31536000, immutable');
-    else if (p.includes(`${path.sep}assets${path.sep}`)) res.set('cache-control', 'public, max-age=31536000, immutable');
+    if (/[/\\]lidar[/\\][a-f0-9]{12}[/\\]/.test(p) || p.includes(`${path.sep}assets${path.sep}`)) res.set('cache-control', 'public, max-age=31536000, immutable');
+    else res.set('cache-control', 'no-cache');
   },
 }));
 app.use((_req, res) => res.sendFile('index.html', { root: 'dist' }));

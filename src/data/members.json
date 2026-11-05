@@ -6,7 +6,10 @@
     "photo": "/members/orion.webp",
     "email": "ogh6@cornell.edu",
     "major": "Computer Science",
-    "linkedin": "https://www.linkedin.com/in/orion-hoch/"
+    "linkedin": "https://www.linkedin.com/in/orion-hoch/",
+    "github": "https://github.com/orion-hoch",
+    "website": "https://orionhoch.com",
+    "graduationYear": 2028
   },
   {
     "name": "Lenny Metlitsky",
@@ -15,7 +18,10 @@
     "photo": "/members/lenny.webp",
     "email": "lm982@cornell.edu",
     "major": "Environmental Engineering",
-    "linkedin": "https://www.linkedin.com/in/leonid-metlitsky/"
+    "linkedin": "https://www.linkedin.com/in/leonid-metlitsky/",
+    "github": "https://github.com/leomet07",
+    "website": "https://lennymetlitsky.com/",
+    "graduationYear": 2028
   },
   {
     "name": "David Hysell",
@@ -33,7 +39,8 @@
     "photo": "/members/dorin.webp",
     "email": "dhk84@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/dorin-kim-14337b243/"
+    "linkedin": "https://www.linkedin.com/in/dorin-kim-14337b243/",
+    "graduationYear": 2028
   },
   {
     "name": "Evelyn Keefe",
@@ -42,7 +49,8 @@
     "photo": "/members/evelyn.webp",
     "email": "enk36@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/evelynkeefe/"
+    "linkedin": "https://www.linkedin.com/in/evelynkeefe/",
+    "graduationYear": 2028
   },
   {
     "name": "Alexander Cherny",
@@ -50,14 +58,16 @@
     "photo": "/members/alexander.webp",
     "email": "amc635@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/alexander-cherny-wx"
+    "linkedin": "https://www.linkedin.com/in/alexander-cherny-wx",
+    "graduationYear": 2029
   },
   {
     "name": "Jihan Bhuiyan",
     "subteam": "Air",
     "photo": "/members/jihan.webp",
     "email": "jsb469@cornell.edu",
-    "major": "Atmospheric Science"
+    "major": "Atmospheric Science",
+    "graduationYear": 2029
   },
   {
     "name": "Kieran Mohindra-Green",
@@ -65,7 +75,8 @@
     "photo": "/members/kieran.webp",
     "email": "kam542@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/kieran-mohindra-green-02395b368/"
+    "linkedin": "https://www.linkedin.com/in/kieran-mohindra-green-02395b368/",
+    "graduationYear": 2029
   },
   {
     "name": "Simran LaBore",
@@ -73,7 +84,8 @@
     "photo": "/members/simran.webp",
     "email": "sl2852@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/simran-labore-502799277/"
+    "linkedin": "https://www.linkedin.com/in/simran-labore-502799277/",
+    "graduationYear": 2027
   },
   {
     "name": "Lucy Alcoba",
@@ -81,7 +93,8 @@
     "photo": "/members/lucy.webp",
     "email": "lca52@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/lucy-alcoba-97b496291"
+    "linkedin": "https://www.linkedin.com/in/lucy-alcoba-97b496291",
+    "graduationYear": 2027
   },
   {
     "name": "Priyanka Cingirikonda",
@@ -89,14 +102,16 @@
     "photo": "/members/priyanka.webp",
     "email": "pc765@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/priyankac717/"
+    "linkedin": "https://www.linkedin.com/in/priyankac717/",
+    "graduationYear": 2029
   },
   {
     "name": "Jacques Dy",
     "subteam": "Air",
     "photo": "/members/jacques.webp",
     "email": "jpd297@cornell.edu",
-    "major": "Atmospheric Science"
+    "major": "Atmospheric Science",
+    "graduationYear": 2029
   },
   {
     "name": "Duke Gandin",
@@ -105,7 +120,8 @@
     "photo": "/members/duke.webp",
     "email": "dag374@cornell.edu",
     "major": "Electrical Engineering",
-    "linkedin": "https://www.linkedin.com/in/duke-gandin/"
+    "linkedin": "https://www.linkedin.com/in/duke-gandin/",
+    "graduationYear": 2028
   },
   {
     "name": "Hayden Fu",
@@ -113,7 +129,10 @@
     "photo": "/members/hayden.webp",
     "email": "hmf63@cornell.edu",
     "major": "Computer Science and Statistics",
-    "linkedin": "https://www.linkedin.com/in/hayden-fu/"
+    "linkedin": "https://www.linkedin.com/in/hayden-fu/",
+    "github": "https://github.com/haydenmfu",
+    "website": "https://haydenmfu.github.io/",
+    "graduationYear": 2029
   },
   {
     "name": "Sean Welker",
@@ -121,7 +140,8 @@
     "photo": "/members/sean.webp",
     "email": "sw2458@cornell.edu",
     "major": "Environmental Engineering",
-    "linkedin": "https://www.linkedin.com/in/sean-welker-32aa10348"
+    "linkedin": "https://www.linkedin.com/in/sean-welker-32aa10348",
+    "graduationYear": 2028
   },
   {
     "name": "Xingjian (Henry) Mu",
@@ -129,7 +149,8 @@
     "photo": "/members/henry.webp",
     "email": "xm245@cornell.edu",
     "major": "Biology and Society",
-    "linkedin": "https://www.linkedin.com/in/henry-mu-4a79b8349/"
+    "linkedin": "https://www.linkedin.com/in/henry-mu-4a79b8349/",
+    "graduationYear": 2027
   },
   {
     "name": "Lauren Rakov",
@@ -137,7 +158,8 @@
     "photo": "/members/lauren.webp",
     "email": "lmr285@cornell.edu",
     "major": "Earth and Climate Sciences",
-    "linkedin": "https://www.linkedin.com/in/lauren-rakov/"
+    "linkedin": "https://www.linkedin.com/in/lauren-rakov/",
+    "graduationYear": 2029
   },
   {
     "name": "Mikiyas Asmamaw",
@@ -145,7 +167,8 @@
     "photo": "/members/mikiyas.webp",
     "email": "mka68@cornell.edu",
     "major": "Chemical Engineering",
-    "linkedin": "https://www.linkedin.com/in/mikiyas-asmamaw/"
+    "linkedin": "https://www.linkedin.com/in/mikiyas-asmamaw/",
+    "graduationYear": 2029
   },
   {
     "name": "Aya Saute",
@@ -154,7 +177,8 @@
     "photo": "/members/aya.webp",
     "email": "acs373@cornell.edu",
     "major": "Environmental Engineering",
-    "linkedin": "https://www.linkedin.com/in/aya-saute-a355a7291/"
+    "linkedin": "https://www.linkedin.com/in/aya-saute-a355a7291/",
+    "graduationYear": 2027
   },
   {
     "name": "Shubha Gautam",
@@ -163,7 +187,8 @@
     "photo": "/members/shubha.webp",
     "email": "sg2563@cornell.edu",
     "major": "Physics and EAS",
-    "linkedin": "https://www.linkedin.com/in/shubha-gautam-17ab93190"
+    "linkedin": "https://www.linkedin.com/in/shubha-gautam-17ab93190",
+    "graduationYear": 2028
   },
   {
     "name": "Abhinav Jacobs",
@@ -171,7 +196,8 @@
     "photo": "/members/abhinav.webp",
     "email": "aej62@cornell.edu",
     "major": "Environmental Engineering",
-    "linkedin": "https://www.linkedin.com/in/abhinav-jacobs/"
+    "linkedin": "https://www.linkedin.com/in/abhinav-jacobs/",
+    "graduationYear": 2029
   },
   {
     "name": "Janice Yohannan",
@@ -179,7 +205,8 @@
     "photo": "/members/janice.webp",
     "email": "jy975@cornell.edu",
     "major": "Earth and Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/janiceyohannan/"
+    "linkedin": "https://www.linkedin.com/in/janiceyohannan/",
+    "graduationYear": 2027
   },
   {
     "name": "Nick Spoto",
@@ -187,7 +214,8 @@
     "photo": "/members/nick.webp",
     "email": "njs232@cornell.edu",
     "major": "Computer Science",
-    "linkedin": "https://www.linkedin.com/in/nick-spoto-240648244/"
+    "linkedin": "https://www.linkedin.com/in/nick-spoto-240648244/",
+    "graduationYear": 2027
   },
   {
     "name": "Sameer Nathawat",
@@ -195,7 +223,8 @@
     "photo": "/members/sameer.webp",
     "email": "sn729@cornell.edu",
     "major": "Statistics",
-    "linkedin": "https://www.linkedin.com/in/sameer-nathawat/"
+    "linkedin": "https://www.linkedin.com/in/sameer-nathawat/",
+    "graduationYear": 2029
   },
   {
     "name": "Sophia Doyle",
@@ -203,23 +232,26 @@
     "photo": "/members/sophia.webp",
     "email": "skd86@cornell.edu",
     "major": "Biological Engineering",
-    "linkedin": "https://www.linkedin.com/in/sophia-k-doyle"
+    "linkedin": "https://www.linkedin.com/in/sophia-k-doyle",
+    "graduationYear": 2028
   },
   {
     "name": "Aidan Moodley",
     "subteam": "Rock",
-    "photo": "",
+    "photo": "/members/aidan.webp",
     "email": "adm289@cornell.edu",
     "major": "Earth and Climate Sciences",
-    "linkedin": "https://www.linkedin.com/in/aidan-moodley/"
+    "linkedin": "https://www.linkedin.com/in/aidan-moodley/",
+    "graduationYear": 2029
   },
   {
     "name": "Leah Tang",
     "subteam": "Rock",
     "photo": "/members/leah.webp",
     "email": "lt395@cornell.edu",
-    "major": "Applied & Engineering Physics and Earth & Atmospheric Sciences",
-    "linkedin": "https://www.linkedin.com/in/le-qi-tang/"
+    "major": "Earth and Atmospheric Sciences",
+    "linkedin": "https://www.linkedin.com/in/le-qi-tang/",
+    "graduationYear": 2028
   },
   {
     "name": "Rithya Sriram",
@@ -228,15 +260,8 @@
     "photo": "/members/rithya.webp",
     "email": "ra596@cornell.edu",
     "major": "Computer Science",
-    "linkedin": "https://www.linkedin.com/in/rithya-sriram/"
-  },
-  {
-    "name": "Ashley Zhao",
-    "subteam": "Data",
-    "photo": "/members/ashley.webp",
-    "email": "ajz45@cornell.edu",
-    "major": "Computer Science",
-    "linkedin": "https://www.linkedin.com/in/ashley-j-zhao/"
+    "linkedin": "https://www.linkedin.com/in/rithya-sriram/",
+    "graduationYear": 2026
   },
   {
     "name": "Christopher Au",
@@ -244,7 +269,8 @@
     "photo": "/members/christopher.webp",
     "email": "cta48@cornell.edu",
     "major": "Computer Science and Math",
-    "linkedin": "https://www.linkedin.com/in/cta48/"
+    "linkedin": "https://www.linkedin.com/in/cta48/",
+    "graduationYear": 2029
   },
   {
     "name": "Adam Zachry",
@@ -252,7 +278,8 @@
     "photo": "/members/adam.webp",
     "email": "mb2926@cornell.edu",
     "major": "Physics & Statistics",
-    "linkedin": "https://www.linkedin.com/in/adam-zachry/"
+    "linkedin": "https://www.linkedin.com/in/adam-zachry/",
+    "graduationYear": 2029
   },
   {
     "name": "Joshua Soo",
@@ -260,14 +287,16 @@
     "photo": "/members/joshua-soo.webp",
     "email": "js3767@cornell.edu",
     "major": "Math & Computer Science",
-    "linkedin": "https://www.linkedin.com/in/joshua-soo/"
+    "linkedin": "https://www.linkedin.com/in/joshua-soo/",
+    "graduationYear": 2028
   },
   {
     "name": "Jennifer Wang",
     "subteam": "Data",
     "photo": "/members/jennifer.webp",
     "email": "jw2894@cornell.edu",
-    "major": "Math & Physics"
+    "major": "Math & Physics",
+    "graduationYear": 2029
   },
   {
     "name": "Avinash Aravind",
@@ -276,7 +305,8 @@
     "photo": "/members/avinash.webp",
     "email": "aa2476@cornell.edu",
     "major": "Atmospheric Science",
-    "linkedin": "https://www.linkedin.com/in/avinash-aravind/"
+    "linkedin": "https://www.linkedin.com/in/avinash-aravind/",
+    "graduationYear": 2026
   },
   {
     "name": "Danna Acosta",
@@ -284,7 +314,8 @@
     "photo": "/members/danna.webp",
     "email": "dsa72@cornell.edu",
     "major": "Computer Science and ORIE",
-    "linkedin": "https://www.linkedin.com/in/dannasacosta/"
+    "linkedin": "https://www.linkedin.com/in/dannasacosta/",
+    "graduationYear": 2027
   },
   {
     "name": "Jimmy Chen",
@@ -292,7 +323,8 @@
     "photo": "/members/jimmy.webp",
     "email": "jzc32@cornell.edu",
     "major": "Electrical Engineering",
-    "linkedin": "https://www.linkedin.com/in/jimmy-chen-43a1ab377/"
+    "linkedin": "https://www.linkedin.com/in/jimmy-chen-43a1ab377/",
+    "graduationYear": 2029
   },
   {
     "name": "Lindsey Paradise",
@@ -300,7 +332,8 @@
     "photo": "/members/lindsey.webp",
     "email": "lmp276@cornell.edu",
     "major": "Earth and Climate Sciences",
-    "linkedin": "https://www.linkedin.com/in/lindsey-paradise-594148246/"
+    "linkedin": "https://www.linkedin.com/in/lindsey-paradise-594148246/",
+    "graduationYear": 2029
   },
   {
     "name": "Suchit Basineni",
@@ -308,7 +341,10 @@
     "photo": "/members/suchit.webp",
     "email": "ssb278@cornell.edu",
     "major": "Computer Science",
-    "linkedin": "https://www.linkedin.com/in/suchit-basineni/"
+    "linkedin": "https://www.linkedin.com/in/suchit-basineni/",
+    "github": "https://github.com/SBasineni1",
+    "website": "https://suchitbasineni.com/",
+    "graduationYear": 2029
   },
   {
     "name": "Milan Grbovic",
@@ -316,7 +352,8 @@
     "photo": "/members/milan.webp",
     "email": "mg2527@cornell.edu",
     "major": "Electrical Computer Engineering",
-    "linkedin": "https://www.linkedin.com/in/milan-grbovic-0a59bb35a/"
+    "linkedin": "https://www.linkedin.com/in/milan-grbovic-0a59bb35a/",
+    "graduationYear": 2029
   },
   {
     "name": "Annika Malhotra",
@@ -325,15 +362,8 @@
     "photo": "/members/annika.webp",
     "email": "am3359@cornell.edu",
     "major": "Computer Science and ORIE",
-    "linkedin": "https://www.linkedin.com/in/annika-malhotra/"
-  },
-  {
-    "name": "Averi Lane",
-    "subteam": "Business",
-    "photo": "/members/averi.webp",
-    "email": "aml444@cornell.edu",
-    "major": "Environmental Engineering",
-    "linkedin": "https://www.linkedin.com/in/averi-m-lane/"
+    "linkedin": "https://www.linkedin.com/in/annika-malhotra/",
+    "graduationYear": 2028
   },
   {
     "name": "Joshua Kennedy",
@@ -341,15 +371,8 @@
     "photo": "/members/joshua-kennedy.webp",
     "email": "jak563@cornell.edu",
     "major": "Environment and Sustainability",
-    "linkedin": "https://www.linkedin.com/in/joshua-kennedy-120046330/"
-  },
-  {
-    "name": "Reece Shiraishi",
-    "subteam": "Business",
-    "photo": "/members/reece.webp",
-    "email": "rcs374@cornell.edu",
-    "major": "Electrical Engineering",
-    "linkedin": "https://www.linkedin.com/in/reece-shiraishi-86087b2b2/"
+    "linkedin": "https://www.linkedin.com/in/joshua-kennedy-120046330/",
+    "graduationYear": 2028
   },
   {
     "name": "Sophie Wang",
@@ -357,6 +380,7 @@
     "photo": "/members/sophie.webp",
     "email": "sw2445@cornell.edu",
     "major": "Biology & Society",
-    "linkedin": "https://www.linkedin.com/in/sophie-j-wang/"
+    "linkedin": "https://www.linkedin.com/in/sophie-j-wang/",
+    "graduationYear": 2029
   }
 ]

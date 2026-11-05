@@ -2,14 +2,13 @@
 // GPU-blocklisted Chromium builds): the same scene as GlobeEngine, ray-cast
 // per pixel onto a plain 2D canvas. The earth is only re-shaded when it turns;
 // the per-frame cost is one drawImage. The stars behind it are Sky.tsx.
+import { globeFrame } from './dive';
 
 type Projected = { x: number; y: number; visible: boolean };
 
 // mirrors GlobeEngine's camera and group so both land in the same place
 const FOV_TAN = Math.tan((42 * Math.PI / 180) / 2);
-const CAM_Z = 3.4;
 const SURFACE_R = 0.571 * 1.25;
-const GY = -0.04;
 const PIN_R = 0.585 / 0.571;
 // light: ambient 0x8fa6c4 at 0.34, key 1.35 from (-4, 1.5, 2.6)
 const AMB = [0x8f / 255 * 0.34, 0xa6 / 255 * 0.34, 0xc4 / 255 * 0.34];
@@ -47,7 +46,7 @@ export class Globe2D {
   buf = document.createElement('canvas');
   tex?: Uint8ClampedArray;
   // viewport, globe centre (gx in camera space; cx, cy, r the screen box)
-  w = 0; h = 0; gx = 0; cx = 0; cy = 0; r = 0;
+  w = 0; h = 0; gx = 0; gy = -0.04; cameraZ = 3.4; cx = 0; cy = 0; r = 0;
   dirty = true;
   _raf?: number;
   _destroyed = false;
@@ -100,20 +99,19 @@ export class Globe2D {
   }
 
   resize(): void {
-    const w = window.innerWidth, h = window.innerHeight;
+    const w = this.canvasEl.clientWidth, h = this.canvasEl.clientHeight;
     if (w === 0 || h === 0) return;
     const dpr = Math.min(window.devicePixelRatio, 2);
     this.w = w; this.h = h;
     this.canvasEl.width = Math.round(w * dpr);
     this.canvasEl.height = Math.round(h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // GlobeEngine's desktop framing, in camera space; Globe.tsx never shows
-    // the earth at mobile widths, so there is no mobile branch here
-    this.gx = FOV_TAN * CAM_Z * (w / h) * 0.44;
-    this.cx = w * 0.72;
-    this.cy = h * (0.5 + GY / (CAM_Z * FOV_TAN) / 2);
+    const rest = globeFrame(w, h);
+    this.gx = rest.x; this.gy = rest.y; this.cameraZ = rest.z;
+    this.cx = w / 2 + rest.x / (rest.z * FOV_TAN) * h / 2;
+    this.cy = h / 2 - rest.y / (rest.z * FOV_TAN) * h / 2;
     // box the drawn sphere with room for perspective stretch
-    this.r = Math.tan(Math.asin(SURFACE_R / CAM_Z)) / FOV_TAN * h / 2 * 1.12;
+    this.r = Math.tan(Math.asin(SURFACE_R / rest.z)) / FOV_TAN * h / 2 * 1.12;
     const d = Math.min(MAX_D, Math.round(this.r * 2 * dpr));
     this.buf.width = this.buf.height = d;
     this.dirty = true;
@@ -135,7 +133,7 @@ export class Globe2D {
     const cy = Math.cos(-ry), sy = Math.sin(-ry), cx = Math.cos(-rx), sx = Math.sin(-rx);
     const { w, h, gx } = this;
     const aspect = w / h;
-    const Cx = gx, Cy = GY, Cz = -CAM_Z;
+    const Cx = gx, Cy = this.gy, Cz = -this.cameraZ;
     const CC = Cx * Cx + Cy * Cy + Cz * Cz;
     const R2 = SURFACE_R * SURFACE_R;
     const step = (2 * this.r) / d;
@@ -179,7 +177,7 @@ export class Globe2D {
     const x1 = x * Math.cos(ry) + z * Math.sin(ry), z1 = -x * Math.sin(ry) + z * Math.cos(ry);
     const y2 = y * Math.cos(rx) - z1 * Math.sin(rx), z2 = y * Math.sin(rx) + z1 * Math.cos(rx);
     const R = SURFACE_R * PIN_R;
-    const Px = this.gx + x1 * R, Py = GY + y2 * R, Pz = -CAM_Z + z2 * R;
+    const Px = this.gx + x1 * R, Py = this.gy + y2 * R, Pz = -this.cameraZ + z2 * R;
     const aspect = this.w / this.h;
     return {
       x: (Px / (-Pz * FOV_TAN * aspect) * 0.5 + 0.5) * this.w,

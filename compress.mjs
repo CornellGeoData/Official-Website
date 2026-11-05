@@ -4,6 +4,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { promisify } from 'node:util';
+import sharp from 'sharp';
 
 const brotli = promisify(zlib.brotliCompress);
 const gzip = promisify(zlib.gzip);
@@ -27,6 +28,13 @@ async function walk(dir) {
       console.log(`${p}: ${buf.length} -> br ${(await fs.stat(p + '.br')).size}`);
     }
   }
+}
+
+// A desktop tile is about 240 css px. A sharp small copy looks better than the browser shrinking a 1400px
+// photo, and it is a tenth of the download. Phones, where a photo fills the screen, still get the full one.
+for (const f of await fs.readdir('dist/members')) {
+  if (!f.endsWith('.webp') || f.endsWith('-600.webp')) continue;
+  await sharp(`dist/members/${f}`).resize({ width: 600, withoutEnlargement: true }).webp({ quality: 86, effort: 6, smartSubsample: true }).toFile(`dist/members/${f.replace('.webp', '-600.webp')}`);
 }
 
 await walk('dist');

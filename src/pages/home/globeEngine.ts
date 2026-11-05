@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EARTH_GONE, EARTH_RADIUS, ITHACA_LATLON, TURN_END, altitude, focal, globeFrame, regionFrame } from './dive';
 
 // The home page's draggable globe. The stars behind it are Sky.tsx.
 interface MountArgs {
@@ -10,10 +11,15 @@ type Vec3Coords = { x: number; y: number; z: number };
 type FaceRotation = { rotY: number; rotX: number };
 type Projected = { x: number; y: number; visible: boolean };
 
-// the earth model is fitted to this surface radius inside the group; pins ride
-// just above it so they are never z-fought by the mesh
+// the earth model is fitted to this surface radius inside the group, and the pin
+// sits on it so it stays locked to the ground all the way down the zoom
 const SURFACE_R = 0.571;
-const PIN_R = 0.585;
+const PIN_R = SURFACE_R;
+// sharper layers of the same imagery around Ithaca, for the way down. lon and lat in degrees, west to east, south to north.
+const LAYERS = [
+  { url: '/art/earth-ne.webp', lon: [-105, -60], lat: [28, 56] },
+  { url: '/art/earth-ny.webp', lon: [-84, -68], lat: [38, 48] },
+];
 
 // scratch vectors - projection runs per pin per frame and must not allocate
 const _pos = new THREE.Vector3();
@@ -21,6 +27,7 @@ const _center = new THREE.Vector3();
 const _normal = new THREE.Vector3();
 const _toCam = new THREE.Vector3();
 const _size = new THREE.Vector2();
+const _euler = new THREE.Euler();
 
 export class GlobeEngine {
   canvasEl!: HTMLCanvasElement;
@@ -33,6 +40,14 @@ export class GlobeEngine {
 
   userYaw = 0.35;
   userPitch = 0.06;
+  // 0 at rest, 1 once scrolling has fallen all the way in toward Ithaca
+  zoom = 0;
+  restX = 0;
+  restY = -0.04;
+  restZ = 3.4;
+  ithaca: FaceRotation = { rotY: 0, rotX: 0 };
+  // Ithaca on the ground, relative to the earth's centre
+  ithacaPoint = new THREE.Vector3();
 
   onResize!: () => void;
 
@@ -59,24 +74,19 @@ export class GlobeEngine {
       if (!this.renderer || !this.camera) return;
       const renderer = this.renderer;
       const camera = this.camera;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = canvasEl.clientWidth;
+      const h = canvasEl.clientHeight;
       if (w === 0 || h === 0) return;
-      const isMobile = w <= 720;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      camera.position.z = isMobile ? 4.3 : 3.4;
+      const rest = globeFrame(w, h);
+      this.restX = rest.x;
+      this.restY = rest.y;
+      this.restZ = rest.z;
+      camera.position.z = this.restZ;
       camera.updateProjectionMatrix();
-      const halfH = Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z;
-      const halfWidth = halfH * camera.aspect;
-      if (isMobile) {
-        // centered in the lower half, below the stacked hero copy
-        this.group.position.set(0, -0.85, 0);
-      } else {
-        // earth sits right of center so the hero copy on the left stays clear
-        this.group.position.set(halfWidth * 0.44, -0.04, 0);
-      }
+      this.group.position.set(this.restX, this.restY, 0);
     };
     window.addEventListener('resize', this.onResize);
 
@@ -194,7 +204,8 @@ export class GlobeEngine {
   initThree(): void {
     const scene = new THREE.Scene();
     this.scene = scene;
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    // the near plane has to clear the camera's closest approach to the ground, about 0.015
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.004, 100);
     camera.position.set(0, 0, 3.4);
     this.camera = camera;
     let renderer: THREE.WebGLRenderer;
@@ -234,6 +245,9 @@ export class GlobeEngine {
 
     this.loadEarth(group);
 
+    this.ithaca = this.faceRot(ITHACA_LATLON.lat, ITHACA_LATLON.lon);
+    const i = this.latLon(ITHACA_LATLON.lat, ITHACA_LATLON.lon, EARTH_RADIUS);
+    this.ithacaPoint.set(i.x, i.y, i.z);
     const aim = this.faceRot(34.25, -44.84);
     this.baseRotY = aim.rotY;
     this.baseRotX = aim.rotX;
@@ -257,6 +271,7 @@ export class GlobeEngine {
       this.renderer?.initTexture(tex);
       mat.map = tex;
       mat.needsUpdate = true;
+      this.loadLayers(group);
       // material color multiplies the map: ease it dark -> white so the
       // texture fades in over the skeleton instead of popping
       const t0 = performance.now();
@@ -272,13 +287,46 @@ export class GlobeEngine {
     if (this.renderer) tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
   }
 
+  // Fetched once the earth has arrived, before anyone is mid-zoom, so uploading them can't stutter a scroll.
+  loadLayers(group: THREE.Group): void {
+    const rad = Math.PI / 180;
+    LAYERS.forEach(({ url, lon, lat }, i) => {
+      new THREE.TextureLoader().load(url, (tex) => {
+        if (this._destroyed) return;
+        tex.encoding = THREE.sRGBEncoding;
+        if (this.renderer) { tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy(); this.renderer.initTexture(tex); }
+        // same parameterisation as latLon(). The sphere is convex, so with back faces culled nothing needs a depth test.
+        const geo = new THREE.SphereGeometry(SURFACE_R, 48, 32, (lon[0] + 180) * rad, (lon[1] - lon[0]) * rad, (90 - lat[1]) * rad, (lat[1] - lat[0]) * rad);
+        const layer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, roughness: 1, transparent: true, depthTest: false }));
+        layer.renderOrder = i + 1;
+        group.add(layer);
+      });
+    });
+  }
+
   animate = (): void => {
     if (this._destroyed || this._noWebGL || !this.renderer) return;
     const renderer = this.renderer;
     this._raf = requestAnimationFrame(this.animate);
 
-    this.group.rotation.y = this.baseRotY + this.userYaw;
-    this.group.rotation.x = Math.max(-1.25, Math.min(1.25, this.baseRotX + this.userPitch));
+    const k = this.zoom;
+    // fully behind the map from here on: don't spend every later frame drawing what nobody can see
+    if (k >= EARTH_GONE) return;
+    const vw = this.canvasEl.clientWidth, vh = this.canvasEl.clientHeight, f = focal(vh), at = regionFrame(vw, vh, k);
+    const yaw = this.baseRotY + this.userYaw, pitch = Math.max(-1.25, Math.min(1.25, this.baseRotX + this.userPitch));
+    // where Ithaca sits on screen at rest, in px from the centre, y up
+    _euler.set(pitch, yaw, 0);
+    _pos.copy(this.ithacaPoint).applyEuler(_euler);
+    const restScale = f / (this.restZ - _pos.z), restX = (this.restX + _pos.x) * restScale, restY = (this.restY + _pos.y) * restScale;
+    // The earth turns to face the camera while Ithaca glides from there to its place on the finished map.
+    // The earth is positioned to put Ithaca on that path, so it can't sweep off screen however big the earth gets.
+    const t = Math.min(1, k / TURN_END), turn = t * t * (3 - 2 * t);
+    this.group.rotation.set(pitch + (this.ithaca.rotX - pitch) * turn, yaw + (this.ithaca.rotY - yaw) * turn, 0);
+    _pos.copy(this.ithacaPoint).applyEuler(this.group.rotation);
+    this.camera.position.z = EARTH_RADIUS + altitude(k, vw, vh);
+    const perPixel = (this.camera.position.z - _pos.z) / f;
+    this.group.position.x = (restX + (at.x - vw / 2 - restX) * turn) * perPixel - _pos.x;
+    this.group.position.y = (restY + (vh / 2 - at.y - restY) * turn) * perPixel - _pos.y;
 
     renderer.render(this.scene, this.camera);
     if (!this._shown) {

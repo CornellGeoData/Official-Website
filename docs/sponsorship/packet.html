@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Cornell GeoData Sponsorship 2026-2027</title>
+<style>
+@font-face { font-family: Intan; src: url(../../public/fonts/intan.otf); }
+@font-face { font-family: Lusitana; src: url(fonts/Lusitana-Regular.ttf); }
+@page { size: 612pt 792pt; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: Lusitana; color: #fff; background: #000; }
+a { color: inherit; text-decoration: none; }
+
+/* All positions are in page points: the black panel starts 9pt in, content 34pt in. */
+.page { position: relative; width: 612pt; height: 792pt; overflow: hidden; background: #000; break-after: page; }
+.page:last-child { break-after: auto; }
+.page::after { content: ""; position: absolute; inset: 0; border: 9pt solid #fff; }
+.at { position: absolute; }
+h1 { position: absolute; left: 34pt; top: 34pt; font: 400 38pt/1 Intan; word-spacing: .1em; white-space: nowrap; }
+.photo { position: absolute; display: block; border: 5pt solid #fff; object-fit: cover; background: #fff; }
+/* Chrome snaps lines to whole CSS pixels, so every leading here is a multiple of .75pt to stay even. */
+.copy p + p { margin-top: .62em; }
+.copy p, .project p, .note p { text-wrap: pretty; }
+
+/* Who we are */
+.who { left: 34pt; top: 86pt; width: 362pt; font-size: 18pt; line-height: 21.75pt; }
+.badges { left: 418pt; top: 89pt; width: 160pt; display: grid; grid-template-columns: 68pt 68pt; justify-content: space-between; row-gap: 10pt; }
+.badges figure { text-align: center; }
+.badges img { display: block; width: 68pt; height: 68pt; }
+.badges figcaption { font: 8.5pt/1 Intan; letter-spacing: .06em; margin-top: 5pt; }
+.caption { left: 0; width: 612pt; top: 747pt; text-align: center; font: 14pt/1 Intan; word-spacing: .1em; }
+
+/* Why sponsor us */
+.why { left: 34pt; top: 84pt; width: 326pt; font-size: 15.6pt; line-height: 18.75pt; }
+.note { left: 34pt; top: 366pt; width: 106pt; font-size: 11.5pt; line-height: 14.25pt; }
+.note h2 { font: 400 11pt/13.5pt Intan; margin-bottom: 4pt; }
+.levels { left: 276pt; top: 362pt; font-size: 11.6pt; line-height: 13.5pt; }
+.levels h2 { font: 400 18pt/1 Intan; word-spacing: .1em; margin-bottom: 4pt; }
+.tier { position: absolute; }
+.tier h2 { font: 400 15pt/1 Intan; letter-spacing: .02em; margin-bottom: 4pt; }
+.tier ul { list-style: none; font-size: 11.6pt; line-height: 13.5pt; }
+.tier li { position: relative; padding-left: 9pt; }
+.tier li::before { content: ""; position: absolute; left: 0; top: 3.6pt; border-left: 5pt solid var(--c); border-top: 3pt solid transparent; border-bottom: 3pt solid transparent; }
+.tier li + li { margin-top: 1.5pt; }
+.amount { font: 13.5pt Intan; text-anchor: middle; }
+
+/* Projects */
+.project { position: absolute; width: 224pt; font-size: 13.8pt; line-height: 16.5pt; }
+.project h2 { font: 400 23pt/1 Lusitana; margin: -2pt 0 8pt; }
+.project.mirror { text-align: right; }
+.project.mirror p { text-wrap: balance; }
+
+/* Learn more: a back cover. Cayuga Lake runs down the page, with the two ways to act on either side of it. */
+.map { position: absolute; left: 0; top: 0; width: 612pt; height: 792pt; display: block; }
+.email { left: 34pt; top: 82pt; font: 37.8pt/1 Intan; white-space: nowrap; }
+.ask { left: 34pt; top: 138pt; width: 238pt; font-size: 17pt; line-height: 20.25pt; }
+.follow { left: 408pt; top: 138pt; width: 170pt; font-size: 14pt; line-height: 18pt; }
+.follow h3 { font: 400 12pt/1 Intan; word-spacing: .1em; margin-bottom: 6pt; }
+.follow a { display: block; }
+.give { left: 34pt; top: 418pt; width: 330pt; }
+.give h2 { font: 400 36pt/.98 Intan; word-spacing: .1em; margin-bottom: 10pt; white-space: nowrap; }
+.give p { width: 300pt; font-size: 15.6pt; line-height: 18.75pt; }
+.give-how { left: 166pt; top: 638pt; height: 120pt; width: 262pt; display: flex; flex-direction: column; justify-content: center; }
+.give-how strong { display: block; font: 400 14pt/1 Intan; word-spacing: .1em; margin-bottom: 7pt; }
+.give-link { display: block; font-size: 14.5pt; line-height: 18pt; text-decoration: underline; text-underline-offset: 2pt; text-decoration-thickness: .75pt; }
+.give-id { margin-top: 3pt; font-size: 11.5pt; line-height: 15pt; }
+.qr { position: absolute; left: 34pt; top: 638pt; width: 120pt; height: 120pt; display: block; }
+.logo { position: absolute; left: 492pt; top: 672pt; width: 86pt; height: 86pt; display: block; }
+.tag { position: absolute; font: 400 12pt/1 Intan; letter-spacing: .2em; white-space: nowrap; }
+.lake-name { left: 0; top: 0; }
+.lake-name text { font: 15px Intan; letter-spacing: 3.2px; word-spacing: 3px; fill: #fff; text-anchor: middle; }
+.tag.town { left: 416pt; top: 731pt; font-size: 9pt; letter-spacing: .14em; }
+</style>
+
+<section class="page">
+  <img src="assets/cover.png" alt="GeoData Project Team. Sponsorship 2026 - 2027. Cornell Duffield Engineering." style="display:block;width:612pt;height:792pt">
+</section>
+
+<section class="page">
+  <h1>WHO WE ARE</h1>
+  <div class="at copy who">
+    <p>GeoData is a Cornell Engineering project team of {{students}} students. We design, build, deploy and analyze our own sensors and data to study the air, water and ground around the Finger Lakes.</p>
+    <p>We have six subteams: Air, Water, Rock, Data, Tech and Business. Our members study computer science, environmental engineering, physics, atmospheric science, statistics and more. Every instrument we put in the field is built or deployed by students and teaches the future engineers who will protect our planet.</p>
+  </div>
+  <div class="at badges">
+    <figure><img src="assets/badge-air.png" alt=""><figcaption>AIR</figcaption></figure>
+    <figure><img src="assets/badge-water.png" alt=""><figcaption>WATER</figcaption></figure>
+    <figure><img src="assets/badge-rock.png" alt=""><figcaption>ROCK</figcaption></figure>
+    <figure><img src="assets/badge-data.png" alt=""><figcaption>DATA</figcaption></figure>
+    <figure><img src="assets/badge-tech.png" alt=""><figcaption>TECH</figcaption></figure>
+    <figure><img src="assets/badge-business.png" alt=""><figcaption>BUSINESS</figcaption></figure>
+  </div>
+  <img class="photo" src="../../public/team.jpg" alt="The GeoData team on the stairs of a Cornell Engineering building, holding the team banner." style="left:34pt;top:368pt;width:544pt;height:369pt">
+  <p class="at caption">TEAM PHOTO 2026</p>
+</section>
+
+<section class="page">
+  <h1>WHY SPONSOR US?</h1>
+  <div class="at copy why">
+    <p>GeoData runs almost entirely on sponsor support. Your contribution goes straight into the parts, sensors, and field deployments that keep our projects running year-round. It puts current technology like LiDAR, machine learning models, and research-grade instruments into the hands of undergraduates who would otherwise only read about it.</p>
+    <p>Every dollar helps a student design, build, and deploy something that is actually out in the field collecting data. Sponsors get to know these engineers and scientists early, while they're solving real problems.</p>
+  </div>
+  <img class="photo" src="assets/field.jpg" alt="A GeoData student crouching beside a soil-moisture station in a field." style="left:384pt;top:88pt;width:194pt;height:250pt">
+  {{pyramid}}
+  <div class="at levels"><h2>SPONSORSHIP LEVELS</h2><p>Each level includes everything below it.</p></div>
+  <div class="at note">
+    <h2>HAVE HARDWARE TO SPARE?</h2>
+    <p>We can use hardware like RAM, graphics cards, CPUs, environmental sensors and LiDAR. It counts toward your level at its value.</p>
+  </div>
+</section>
+
+<section class="page">
+  <h1>OUR CURRENT PROJECTS</h1>
+
+  <div class="project" style="left:34pt;top:86pt">
+    <h2>LiDAR Hexapod</h2>
+    <p>A walking survey robot we're building with Cornell Physical Intelligence to map 3D terrain. Six legs, two cameras and a Livox LiDAR sensor will scan any area of interest. We're training it in simulation with Isaac Sim, Cosmos and RL gait training to cross textured forest floors, with our own vision models for obstacle detection and path planning.</p>
+  </div>
+  <img class="photo" src="assets/hexapod.jpg" alt="Design render of the six-legged LiDAR hexapod." style="left:272pt;top:84pt;width:306pt;height:214pt;object-fit:contain">
+
+  <img class="photo" src="assets/buoy.jpg" alt="A student working on the research buoy and its solar panel." style="left:34pt;top:314pt;width:306pt;height:214pt">
+  <div class="project mirror" style="left:354pt;top:316pt">
+    <h2>Cayuga Buoy Station</h2>
+    <p>A research buoy we're refitting and anchoring in Cayuga Lake as a floating water and weather station. Sensors below the surface and a meteorological station above it will record both sides of the exchange that drives lake-effect snow. We're building the mooring, power system and telemetry so it can report live through the season.</p>
+  </div>
+
+  <div class="project" style="left:34pt;top:546pt">
+    <h2>Atmospheric Sensors</h2>
+    <p>Two projects that measure the air around Ithaca from the ground up. Our tethersonde flies up to 500 feet, profiling temperature, humidity, pressure and wind through the boundary layer. On the ground, we build 3D-printed weather stations on UCAR's 3DPAWS design at a fraction of commercial cost. Together they will feed a local network for training our own weather models.</p>
+  </div>
+  <img class="photo" src="assets/tethersonde.jpg" alt="Students launching the orange tethersonde balloon on a lawn." style="left:272pt;top:544pt;width:306pt;height:214pt">
+</section>
+
+<section class="page">
+  <img class="map" src="assets/lake.jpg" alt="Elevation map of Cayuga Lake, running down the page to Ithaca at its south end.">
+  <h1>WANT TO LEARN MORE?</h1>
+  <a class="at email" href="mailto:cugeodata@cornell.edu?subject=GeoData%20Sponsorship%202026-2027">cugeodata@cornell<span style="margin-left:.05em">.</span>edu</a>
+  <p class="at ask">Ask for {{contact_name}}, our Business Lead, about the levels, a hardware donation, or the right project for your team.</p>
+  <div class="at follow">
+    <h3>FOLLOW THE TEAM</h3>
+    <a href="https://www.cornellgeodata.com/">cornellgeodata.com</a>
+    <a href="https://www.instagram.com/cugeodata/">Instagram @cugeodata</a>
+    <a href="https://www.linkedin.com/company/cu-geodata/">LinkedIn CU GeoData</a>
+  </div>
+
+  <!-- crowdfunding: build.mjs drops this block once the campaign closes -->
+  <div class="at give">
+    <h2><a href="{{give_url}}">CROWDFUNDING<br>IS OPEN</a></h2>
+    <p>Give any amount through Cornell Crowdfunding until {{give_until}}. Every gift is a donation to Cornell University, so it's <span style="white-space:nowrap">tax-deductible,</span> and you'll get a tax receipt.</p>
+  </div>
+  <div class="at give-how">
+    <strong>SCAN TO GIVE</strong>
+    <a class="give-link" href="{{give_url}}">{{give_label}}</a>
+    <p class="give-id">Cornell University federal tax ID 15-0532082</p>
+  </div>
+  <!-- /crowdfunding -->
+
+  <a href="{{qr_url}}"><img class="qr" src="{{qr_src}}" alt="QR code to {{qr_url}}"></a>
+  <img class="logo" src="assets/logo.png" alt="GeoData logo">
+  <!-- The lake's name follows its centerline; make_lake.py prints this path. -->
+  <svg class="at lake-name" width="612pt" height="792pt" viewBox="0 0 612 792" role="img" aria-label="Cayuga Lake">
+    <path id="lake-line" fill="none" d="M314.0,243.0 313.1,247.2 312.6,251.5 312.4,255.8 312.3,260.1 312.5,264.3 312.9,268.5 313.4,272.7 314.0,276.8 314.7,281.0 315.5,285.1 316.4,289.1 317.3,293.2 318.2,297.2 319.2,301.3 320.2,305.3 321.3,309.3 322.3,313.4 323.4,317.4 324.5,321.4 325.6,325.4 326.8,329.5 328.0,333.5 329.2,337.6 330.4,341.6 331.8,345.7 333.1,349.7 334.5,353.8 336.0,357.9 337.6,361.9 339.2,366.0 341.0,370.1 342.8,374.2 344.7,378.3 346.7,382.4 348.8,386.5 351.0,390.6 353.4,394.7 355.8,398.8 358.3,402.8 361.0,406.9 363.7,411.0 366.5,415.1 369.4,419.1 372.4,423.2 375.4,427.2 378.5,431.2 381.6,435.2 384.7,439.2 387.7,443.2 390.7,447.2 393.6,451.1 396.4,455.0 399.1,458.9 401.5,462.8 403.8,466.6 405.7,470.3 407.4,474.2"/>
+    <text><textPath href="#lake-line" startOffset="50%">CAYUGA LAKE</textPath></text>
+  </svg>
+  <span class="tag town">ITHACA</span>
+</section>
+</html>

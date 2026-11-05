@@ -10,7 +10,11 @@ export interface Member {
   photo: string; // path under /public, e.g. '/members/jane-doe.webp' - empty string shows a placeholder
   email: string;
   major: string;
+  graduationYear?: number;
   linkedin?: string;
+  github?: string;
+  website?: string;
+  websiteLabel?: string;
 }
 
 export interface Project {
@@ -20,10 +24,9 @@ export interface Project {
   title: string;
   body: string;
   photo?: string; // path under /public; omitted shows a placeholder block
-  photo2?: string; // second image, shown side by side on the full-width card
+  video?: { src: string; label: string }; // muted loop shown in place of the photo, which becomes its poster
   photoPosition?: string; // object-position focal point within the crop frame
   photoAspect?: string; // card image aspect ratio; defaults to 16/10
-  viewer?: { href: string; label: string }; // a live visualization to open from the card
 }
 
 export const PROJECTS: Project[] = [
@@ -32,7 +35,7 @@ export const PROJECTS: Project[] = [
     tag: 'Tech x Air',
     tagColor: '#c92556',
     title: '3D Printed Weather Stations',
-    body: "Weather stations based on UCAR's open-source 3DPAWS design use 3D-printed components. They measure temperature, pressure, humidity, wind, and precipitation for local meteorological monitoring.",
+    body: 'Open-source 3DPAWS weather stations, printed in-house.',
     photo: '/projects/sensors.webp',
   },
   {
@@ -40,7 +43,7 @@ export const PROJECTS: Project[] = [
     tag: 'Water',
     tagColor: '#2e6fc9',
     title: 'Cayuga Lake Buoy',
-    body: 'A research buoy is being refitted for deployment on Cayuga Lake. Meteorological and water sensors will collect concurrent observations of atmospheric and lake conditions.',
+    body: 'A refitted research buoy measuring the lake and the air above it.',
     photo: '/projects/sensors-lake.webp',
   },
   {
@@ -48,7 +51,7 @@ export const PROJECTS: Project[] = [
     tag: 'Air',
     tagColor: '#6d9dcd',
     title: 'Atmospheric Tethersonde',
-    body: 'A tethered instrument platform collects vertical profiles of atmospheric conditions. These measurements support studies of the boundary layer and lake-effect weather.',
+    body: 'Vertical profiles of the boundary layer and lake-effect weather.',
     photo: '/projects/tethersonde.webp',
     photoAspect: '4/5',
     photoPosition: '57% 50%',
@@ -58,7 +61,7 @@ export const PROJECTS: Project[] = [
     tag: 'Rock',
     tagColor: '#c1703f',
     title: 'NISAR Ground-Truthing',
-    body: 'Five soil moisture nodes at Game Farm provide ground measurements for comparison with NASA NISAR satellite observations. Current and archived records are available through the sensor views.',
+    body: "Soil moisture nodes checking NASA's NISAR satellite from the ground.",
     photo: '/projects/nisar.webp',
     photoAspect: '4/5',
     photoPosition: '50% 40%',
@@ -68,16 +71,19 @@ export const PROJECTS: Project[] = [
     tag: 'Tech x CUPI Partnership',
     tagColor: '#c92556',
     title: 'LiDAR Hexapod',
-    body: 'A LiDAR-equipped hexapod is being developed with Cornell Physical Intelligence for ground surveys. Its scans are intended to complement UAV point clouds in 3D terrain mapping.',
-    photo: '/projects/hexapod.webp',
-    viewer: { href: '#/sensors/lidar', label: 'Open the LiDAR viewer' },
+    body: 'A walking LiDAR robot for ground surveys, built with Cornell Physical Intelligence.',
+    photo: '/projects/hexapod-walk.webp',
+    video: { src: '/projects/hexapod-walk.mp4', label: "In simulation, the hexapod is pushed off a ledge, lands upside down, and keeps walking." },
+    photoAspect: '3/2',
+    photoPosition: '50% 60%',
   },
   {
     tag: 'Coming soon',
     tagColor: '#c92556',
     title: 'Drone Photogrammetry',
-    body: 'Planned drone surveys will use overlapping aerial images to reconstruct shoreline topography. Repeat surveys will quantify erosion and other surface changes in the Finger Lakes.',
+    body: 'Drone surveys to track shoreline erosion in the Finger Lakes.',
     photo: '/projects/drone.webp',
+    photoAspect: '3/2',
   },
 ];
 
@@ -88,66 +94,26 @@ export const PARTNERS = [
   'Shen Fund for Social Impact',
 ];
 
-// Cornell project-team recruiting dates, fall 2026, from the Engineering
-// project teams recruiting calendar. `end` (Ithaca local time) is when the
-// event stops being "upcoming": the timeline greys past stops, and the
-// recruiting banner and join pills key off each track's 'apps' stop, so
-// updating these dates each August updates all three.
-export interface RecruitingEvent {
-  name: string;
-  when: string; // display text; \n breaks a line
-  end: string; // ISO with the Ithaca offset
-  icon: 'fest' | 'coffee' | 'apps' | 'interview' | 'offer' | 'deadline' | 'onboard';
-}
-
-export interface RecruitingTrack {
-  track: string;
-  form: string; // where the join pill and banner send applicants
-  formLabel: string; // the join pill's text before the deadline
-  events: RecruitingEvent[];
-}
-
-export const RECRUITING_TRACKS: RecruitingTrack[] = [
-  {
-    track: 'Upperclassmen',
-    form: 'https://docs.google.com/forms/d/e/1FAIpQLSfI87dxinWPeDd9aevwKjwfP0NtWR8uJDhHeD9qjdQPXV9oiA/viewform?usp=dialog',
-    formLabel: 'Upperclassmen Recruiting',
-    events: [
-      { name: 'Project Teams Fest', when: 'Sept 1, 4-6 p.m.\nDuffield Atrium', end: '2026-09-01T18:00:00-04:00', icon: 'fest' },
-      { name: 'Coffee Chats', when: 'Aug 27 – Sept 4', end: '2026-09-04T23:59:59-04:00', icon: 'coffee' },
-      { name: 'Applications Due', when: 'Sept 3, 11:59 p.m.', end: '2026-09-03T23:59:00-04:00', icon: 'apps' },
-      { name: 'Interviews', when: 'Sept 4 – 15', end: '2026-09-15T23:59:59-04:00', icon: 'interview' },
-      { name: 'First Offer Date', when: 'Sept 16', end: '2026-09-16T23:59:59-04:00', icon: 'offer' },
-      { name: 'Add Deadline', when: 'Sept 25, 5 p.m.', end: '2026-09-25T17:00:00-04:00', icon: 'deadline' },
-    ],
-  },
-  {
-    track: 'Freshmen + New Transfers',
-    form: 'https://docs.google.com/forms/d/e/1FAIpQLSfngx7aJDokCcOTyB0bC0d3i3ksI0pDtv2WCbpz_J5lZ4x-Zw/viewform?usp=dialog',
-    formLabel: 'Freshman Application',
-    events: [
-      { name: 'Info Session', when: 'Sept 16, 5–6 p.m.\nSnee 1150', end: '2026-09-16T18:00:00-04:00', icon: 'interview' },
-      { name: 'Coffee Chats', when: 'Aug 27 – Oct 14', end: '2026-10-14T23:59:59-04:00', icon: 'coffee' },
-      { name: 'Applications Due', when: 'Oct 15, 11:59 p.m.', end: '2026-10-15T23:59:00-04:00', icon: 'apps' },
-      { name: 'Interviews', when: 'Oct 16 – Nov 1', end: '2026-11-01T23:59:59-05:00', icon: 'interview' },
-      { name: 'First Offer Date', when: 'Nov 2', end: '2026-11-02T23:59:59-05:00', icon: 'offer' },
-      { name: 'Onboarding Begins', when: 'Nov 4', end: '2026-11-04T23:59:59-05:00', icon: 'onboard' },
-    ],
-  },
-];
-
-export const COFFEE_CHAT_SHEET = 'https://docs.google.com/spreadsheets/d/1ZYLfV6FjYPi1sL58lr9eAjuKM37q2tXTtEAOSyoPfpU/edit?usp=sharing';
-
-// tracks whose application deadline is still ahead, with that deadline
-export const openApplications = (now = Date.now()) =>
-  RECRUITING_TRACKS.flatMap((t) => {
-    const apps = t.events.find((e) => e.icon === 'apps');
-    return apps && now <= Date.parse(apps.end) ? [{ track: t, due: apps }] : [];
-  });
-
-// '2026-09-03T23:59:00-04:00' -> '9/3', read off the string so every viewer
-// sees the Ithaca date regardless of their own timezone
-export const shortDate = (iso: string) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+// The fall campaign on Cornell Crowdfunding. The raised total is
+// read live through /api/crowdfunding (server/crowdfunding.mjs); `end` is when the
+// home page's Support section stops asking for gifts and points at sponsorship.
+// `ticks` are the donation bar's markers, from the campaign's giving levels; lvid
+// opens that level on its donate page.
+export const CROWDFUNDING = {
+  url: 'https://crowdfunding.cornell.edu/project/50966',
+  goal: 5000,
+  end: '2026-12-05T00:00:00-05:00',
+  ticks: [
+    { amount: 20, lvid: 142209, icon: 'chip', does: 'buys a circuit sensor' },
+    { amount: 50, lvid: 142210, icon: 'wrench', does: 'covers a hardware store trip' },
+    { amount: 100, lvid: 142211, icon: 'signal', does: 'keeps our sensor data flowing' },
+    { amount: 250, lvid: 142212, icon: 'probe', does: 'buys a soil moisture sensor' },
+    { amount: 500, lvid: 142214, icon: 'drop', does: 'pays for EPA-certified water testing' },
+    { amount: 1000, lvid: 142215, icon: 'computer', does: 'buys computer parts' },
+    { amount: 2500, lvid: 142218, icon: 'station', does: 'deploys another weather station' },
+    { amount: 3500, lvid: 142219, icon: 'buoy', does: 'deploys a weather station buoy in Ithaca' },
+  ],
+};
 
 export const SUBTEAM_COLORS: Record<string, string> = {
   Leadership: '#4fae7d',
@@ -211,6 +177,7 @@ export const ALUMNI: { place: string; logo?: string }[] = [
 ];
 
 // Edit the roster in src/data/members.json and photos in public/members/.
+// Profiles awaiting photos are saved separately in members.pending.json.
 export const MEMBERS: Member[] = membersData;
 
 export const SUBTEAM_COUNT = new Set(MEMBERS.map((m) => m.subteam)).size - 1; // Leadership isn't a subteam

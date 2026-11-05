@@ -1,0 +1,199 @@
+{
+  "description": "One land-only terrain-shape classification for desktop and mobile Data artwork.",
+  "source": "USGS 3DEP Bare Earth DEM dynamic elevation service",
+  "source_url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+  "source_dem_sha256": "e0108380058495eed64b82ff6c9705451a3c7382e4ec66e5fa48b1f10447e60f",
+  "source_processing": "Existing dem_base.py input cache and terrain.load lake mask; no new source download.",
+  "crs": "EPSG:26918",
+  "grid": {
+    "e0": 335000.0,
+    "n0": 4768000.0,
+    "cell_m": 28.0,
+    "shape": [
+      2857,
+      2321
+    ],
+    "coordinates": "easting=e0+column*cell; northing=n0-row*cell; same convention as terrain.py"
+  },
+  "method": "Seeded k-means++ initialization, k-means, eight classes, 60,000 land-only samples, 30 iterations",
+  "seed": 3,
+  "feature_names": [
+    "standardized elevation",
+    "clipped slope",
+    "clipped signed curvature",
+    "eastward slope direction",
+    "northward slope direction"
+  ],
+  "feature_weights": [
+    1,
+    2.4,
+    1.6,
+    0.8,
+    0.8
+  ],
+  "gaussian_sigma_m": {
+    "elevation": 45,
+    "slope": 75,
+    "curvature": 180
+  },
+  "feature_scales": {
+    "elevation_mean_m": 302.80828857421875,
+    "elevation_std_m": 118.90862274169922,
+    "slope_p98_m_per_m": 0.21328428387641907,
+    "abs_curvature_p98_per_m": 0.0005574068636633456,
+    "direction_regularizer_m_per_m": 0.0033333333333333335
+  },
+  "centers": [
+    [
+      0.10703496167067186,
+      0.4537606053500851,
+      -0.04006633464668939,
+      0.5498367848421263,
+      0.07744656736008416
+    ],
+    [
+      -1.0934403703795115,
+      0.4154603646828338,
+      -0.011911847382001826,
+      0.5271703820118145,
+      0.19114436632241846
+    ],
+    [
+      -0.9667671855483838,
+      0.446484811716352,
+      -0.029575009720106772,
+      -0.5897620928548392,
+      -0.0759313719852111
+    ],
+    [
+      1.22155195106715,
+      0.607788543559586,
+      -0.05087140455318799,
+      0.4679600802164706,
+      0.19623600071480987
+    ],
+    [
+      0.49568738051651473,
+      0.4809545490835338,
+      -0.031515248878776735,
+      -0.48854114490251,
+      -0.2558540073754228
+    ],
+    [
+      1.609879410391558,
+      1.2680498088268763,
+      -0.8583070456888906,
+      -0.1793873495695881,
+      -0.04605699841910491
+    ],
+    [
+      0.4060325456896011,
+      1.8093455659389053,
+      0.6427246533028899,
+      -0.023988277456535347,
+      -0.04629077277741595
+    ],
+    [
+      -1.0330440898127176,
+      0.25515404783613993,
+      0.03560181230093132,
+      0.08939320265069613,
+      -0.5051057889189584
+    ]
+  ],
+  "cleanup": {
+    "window_cells": 5,
+    "window_m": 140.0,
+    "method": "unique neighborhood mode, excluding water; original center retained on ties",
+    "changed_land_cells": 102844
+  },
+  "color": "Shared class order by mean slope; higher rank is brighter purple. Rendering adds boundary emphasis and hillshade.",
+  "classes": [
+    {
+      "class": 7,
+      "color_rank": 0,
+      "land_cells": 580861,
+      "area_km2": 455.395024,
+      "mean_elevation_m": 179.354248046875,
+      "mean_slope_m_per_m": 0.022829808294773102,
+      "mean_slope_degrees": 1.3065932989120483,
+      "mean_curvature_per_m": 1.356881512037944e-05
+    },
+    {
+      "class": 1,
+      "color_rank": 1,
+      "land_cells": 822427,
+      "area_km2": 644.782768,
+      "mean_elevation_m": 172.6616973876953,
+      "mean_slope_m_per_m": 0.03648526966571808,
+      "mean_slope_degrees": 2.0853254795074463,
+      "mean_curvature_per_m": -4.421639005158795e-06
+    },
+    {
+      "class": 2,
+      "color_rank": 2,
+      "land_cells": 940195,
+      "area_km2": 737.11288,
+      "mean_elevation_m": 186.79380798339844,
+      "mean_slope_m_per_m": 0.039421334862709045,
+      "mean_slope_degrees": 2.2535150051116943,
+      "mean_curvature_per_m": -8.80031984706875e-06
+    },
+    {
+      "class": 0,
+      "color_rank": 3,
+      "land_cells": 1080182,
+      "area_km2": 846.862688,
+      "mean_elevation_m": 315.25653076171875,
+      "mean_slope_m_per_m": 0.040236666798591614,
+      "mean_slope_degrees": 2.3018367290496826,
+      "mean_curvature_per_m": -1.3487796422850806e-05
+    },
+    {
+      "class": 4,
+      "color_rank": 4,
+      "land_cells": 1173261,
+      "area_km2": 919.836624,
+      "mean_elevation_m": 362.218017578125,
+      "mean_slope_m_per_m": 0.043145839124917984,
+      "mean_slope_degrees": 2.468407392501831,
+      "mean_curvature_per_m": -1.2671875083469786e-05
+    },
+    {
+      "class": 3,
+      "color_rank": 5,
+      "land_cells": 734563,
+      "area_km2": 575.897392,
+      "mean_elevation_m": 448.30487060546875,
+      "mean_slope_m_per_m": 0.05423377454280853,
+      "mean_slope_degrees": 3.1005215644836426,
+      "mean_curvature_per_m": -1.6483387298649177e-05
+    },
+    {
+      "class": 5,
+      "color_rank": 6,
+      "land_cells": 423721,
+      "area_km2": 332.197264,
+      "mean_elevation_m": 496.17669677734375,
+      "mean_slope_m_per_m": 0.11845110356807709,
+      "mean_slope_degrees": 6.709146022796631,
+      "mean_curvature_per_m": -0.00033380702370777726
+    },
+    {
+      "class": 6,
+      "color_rank": 7,
+      "land_cells": 342115,
+      "area_km2": 268.21816,
+      "mean_elevation_m": 349.2887878417969,
+      "mean_slope_m_per_m": 0.17247256636619568,
+      "mean_slope_degrees": 9.73266315460205,
+      "mean_curvature_per_m": 0.00023990077897906303
+    }
+  ],
+  "limits": [
+    "Exploratory terrain groups, not validated named landform classes.",
+    "Water labels and out-of-grid coordinates are 255; renderers must not extrapolate.",
+    "Model and colors are shared by both views; rendering resampling still differs by output resolution."
+  ],
+  "elapsed_seconds": 1.891
+}

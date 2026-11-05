@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { RESIPLE, MANTI } from '../../styles/theme';
+import { RESIPLE, MANTI, CLOSE_ICON } from '../../styles/theme';
 import SensorMap from './SensorMap';
+import { useCompactViewport } from './useCompactViewport';
 import { VisualizationList } from './VisualizationList';
 import WeatherForecast from './WeatherForecast';
 import WeatherVerify from './WeatherVerify';
@@ -12,27 +13,27 @@ import {
   type MapSite, type SensorPoint, type SensorTable, type TimeRange,
 } from './sensorData';
 import { SensorChart, SoilCharts, WeatherCharts, EggCharts } from './SensorCharts';
+import { wholeRowsHeight } from './wholeRows';
+
+// the LiDAR and hexapod X matches their control panel: see .panel in src/viewers/*/style.css
+const VIEWER_CLOSE: CSSProperties = { background: 'rgba(14,20,28,.88)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,.15)' };
 
 // square utility button, shared by the card headers and the static sheet
-const BTN: CSSProperties = { appearance: 'none', cursor: 'pointer', padding: '9px 11px', border: '1px solid rgba(255,255,255,0.22)', background: 'transparent', color: '#a9bcc6', fontFamily: RESIPLE, fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0 };
+const BTN: CSSProperties = { appearance: 'none', cursor: 'pointer', padding: '9px 11px', minHeight: 44, border: '1px solid rgba(255,255,255,0.22)', background: 'transparent', color: '#a9bcc6', fontFamily: RESIPLE, fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0 };
 
 // empty state for a window with no samples; the page only fetches on load
 const OFFLINE = 'No readings came back for this window. Reload the page to try again.';
 
-// hard minimums the corner grip can shrink to (one chart plate exactly)
-const EGG_MIN = { w: 420, h: 309 };
+// the smallest the corner grip can shrink a card to
+const CARD_MIN = { w: 420, h: 120 };
 
-const SOIL_MIN = { w: 420, h: 309 };
+// opening widths: two charts wide, with room for a classic scrollbar. Height comes from the charts; see
+// ReadingCard. Retired probes carry a single lifetime plate, just wide enough for the header row.
+const CARD_W = 720;
+const RETIRED_W = 500;
 
-// opening sizes: two charts wide, two tall, so a card lands showing four
-// plates - for the eggs that's CO2, Temperature, PM2.5, and PM1.0
-const EGG_OPEN = { w: 700, h: 580 };
-
-const SOIL_OPEN = { w: 700, h: 560 };
-
-// retired probes carry a single lifetime plate - one-chart height, just wide
-// enough that the header row (name, coords, buttons) fits untruncated
-const RET_OPEN = { w: 500, h: 309 };
+// a card stays on screen: it parks 68px down, cascades 36px per card, and keeps a 12px margin below
+const cardMaxHeight = (index: number) => `calc(100dvh - ${80 + index * 36}px)`;
 
 // the static sheet's tabs wear their family's tone
 const TAB_TONE = { air: AIR, soil: SOIL, weather: WEATHER } as const;
@@ -51,7 +52,8 @@ export function VisualizationsPage() {
   const [open, setOpen] = useState<string[]>([]);
   // phones run the same stages; isMobile only reshapes the chrome (insets,
   // the bottom-sheet card) rather than forking the page
-  const [isMobile] = useState(() => window.matchMedia('(max-width: 720px)').matches);
+  const isMobile = useCompactViewport();
+  useEffect(() => { if (isMobile) setOpen((ids) => ids.slice(-1)); }, [isMobile]);
   // the page footer goes away under a full-screen stage - scrolling onto it
   // reads as jarring. It lives in App, so it's toggled directly.
   // the static sheet: the pre-globe sensors page (Air Quality / Soil Moisture
@@ -114,17 +116,31 @@ export function VisualizationsPage() {
     if (!bar) return;
     bar.style.transition = 'transform 300ms ease';
     bar.style.transform = headerHidden ? 'translateY(-100%)' : 'translateY(0)';
+    bar.inert = headerHidden;
     // Close the header menu without firing the stage's hash navigation listener.
     if (headerHidden) window.dispatchEvent(new Event('geodata:hide-header'));
     return () => {
       bar.style.transition = '';
       bar.style.transform = '';
+      bar.inert = false;
     };
   }, [headerHidden]);
   // the 3D viewers need WebGL; without it the stage shows its still instead
-  const [noWebGL] = useState(() => {
-    try { const c = document.createElement('canvas'); return !(c.getContext('webgl2') || c.getContext('webgl')); } catch { return true; }
-  });
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const [viewerAttempt, setViewerAttempt] = useState(0);
+  const [noWebGL, setNoWebGL] = useState<boolean | null>(null);
+  useEffect(() => {
+    if ((lidarView || hexapodView) && noWebGL === null) setNoWebGL(!supportsWebGL2());
+  }, [lidarView, hexapodView, noWebGL]);
+  useEffect(() => {
+    setViewerFailed(false);
+    const onFailure = (event: MessageEvent) => {
+      const frame = document.querySelector<HTMLIFrameElement>('.geodata-viewer');
+      if (event.origin === window.location.origin && event.source === frame?.contentWindow && event.data?.type === 'geodata:viewer-error') setViewerFailed(true);
+    };
+    window.addEventListener('message', onFailure);
+    return () => window.removeEventListener('message', onFailure);
+  }, [lidarView, hexapodView]);
   // reflect the current stage into the hash so refresh and copied links land
   // where the reader was (replaceState fires no hashchange, so no loop)
   useEffect(() => {
@@ -143,8 +159,8 @@ export function VisualizationsPage() {
   // rather than by a tab, so the network reads as one network
   const sites: MapSite[] = useMemo(() => [
     ...EGGS.map((e) => ({ id: e.id, name: e.name, sub: e.location, tone: AIR, ...dm(e.coords) })),
-    ...SOILMOTES.map((m) => ({ id: m.id, name: m.name, sub: m.location, tone: SOIL, ...dm(m.coords) })),
-    ...RETIRED.map((r) => ({ id: r.name, name: r.name, sub: `Retired ${r.to}`, tone: SOIL, retired: true, labelBelow: r.labelBelow, ...dm(r.coords) })),
+    ...SOILMOTES.map((m) => ({ id: m.id, name: m.name, sub: m.location, tone: SOIL, labelBelow: m.labelBelow, ...dm(m.coords) })),
+    ...RETIRED.map((r) => ({ id: r.name, name: r.name, sub: `Retired ${r.to}`, tone: SOIL, retired: true, ...dm(r.coords) })),
     ...NEWA_STATIONS.map((s) => ({ id: s.id, name: s.name, sub: s.location, tone: WEATHER, lat: s.lat, lon: s.lon })),
   ], []);
   // Nothing here is fetched until a stage needs it: the menu, the LiDAR
@@ -153,7 +169,8 @@ export function VisualizationsPage() {
   // liveData covers the map pins and the charts sheet; the two archives wait
   // for an open card or the sheet, because only those show a lifetime trace.
   const liveData = mapView || !!staticView;
-  const archives = !!staticView || open.length > 0;
+  const soilArchive = (staticView === 'soil' && range === 'life') || open.some((id) => SOILMOTES.some((m) => m.id === id));
+  const eggArchive = staticView === 'air' && range !== 'day';
   const alive = useRef(true);
   // set on the way in as well as out: StrictMode's practice unmount would
   // otherwise leave it false and drop every response that lands after it
@@ -224,7 +241,7 @@ export function VisualizationsPage() {
 
   const [soilLife, setSoilLife] = useState<Record<string, unknown>>({});
   useEffect(() => {
-    if (!claim('soilLife', archives)) return;
+    if (!claim('soilLife', soilArchive)) return;
     // the lifetime archive takes Zynect ~a minute to assemble, so it comes through
     // the server proxy (long cache) and the charts pop in when it lands
     fetch('/api/soil-lifetime')
@@ -240,7 +257,7 @@ export function VisualizationsPage() {
       .then((raw) => alive.current && setSoilLife((raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archives]);
+  }, [soilArchive]);
 
   useEffect(() => {
     if (!claim('aqi', liveData)) return;
@@ -254,13 +271,13 @@ export function VisualizationsPage() {
   // The eggs' year-long archive for the history charts.
   const [eggLife, setEggLife] = useState<Record<string, unknown> | null>(null);
   useEffect(() => {
-    if (!claim('eggLife', archives)) return;
+    if (!claim('eggLife', eggArchive)) return;
     fetch('/api/aqi-lifetime')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((raw) => alive.current && setEggLife((raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>))
       .catch(() => alive.current && setEggLife({}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archives]);
+  }, [eggArchive]);
 
   // parsing the multi-MB feed is expensive - do it once per fetch, not per render
   const parsed = useMemo(
@@ -338,7 +355,7 @@ export function VisualizationsPage() {
         })()}
       </>
     );
-    return { site, accent, metaLines, readings, isEgg: !!egg, status };
+    return { site, accent, metaLines, readings, status };
   };
 
   // one egg's series at a time window: the day feed is densest for Day, the
@@ -388,43 +405,35 @@ export function VisualizationsPage() {
   const cardFor = (id: string) => {
     const d = deriveFor(id);
     if (!d.site) return null;
-    const size = d.site.retired ? RET_OPEN : d.isEgg ? EGG_OPEN : SOIL_OPEN;
     return (
-      <div style={{
-        // opens showing four plates (one for retired probes) and the corner
-        // grip resizes it to taste; the drag handle is the header bar
-        width: size.w, height: size.h,
-        maxWidth: 'calc(100vw - 48px)', maxHeight: 'calc(100dvh - 120px)', display: 'flex', flexDirection: 'column',
+      <ReadingCard label={`${d.site.name} readings`} bodyPadding={isMobile ? '12px 12px max(16px, env(safe-area-inset-bottom))' : 16} header={
+        <div data-drag-handle style={{ padding: isMobile ? '8px 12px 10px' : '12px 16px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.09)', cursor: isMobile ? 'default' : 'grab', userSelect: 'none', touchAction: isMobile ? 'auto' : 'none' }}>
+          {/* name and GPS read as one block; on phones Show all data takes its own row and the X keeps the corner */}
+          <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px 12px' : 8 }}>
+            <div style={{ flex: '1 1 0', minWidth: 0, marginRight: isMobile ? 0 : 8 }}>
+              <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: isMobile ? 20 : 22, lineHeight: 1.2, letterSpacing: '-0.015em', margin: 0, overflowWrap: 'anywhere' }}>{d.site.name}</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 12px', marginTop: 2, color: '#a9bcc6', fontSize: 12, lineHeight: 1.4 }}>
+                <span>{d.metaLines[0]}</span>
+                {d.status && <span style={{ color: d.status.live ? '#84d3ab' : '#a9bcc6' }}>Updated {fmtTime(d.status.t)}</span>}
+              </div>
+            </div>
+            <button onClick={() => openStatic(id)} style={{ ...BTN, minHeight: isMobile ? 44 : 36, height: isMobile ? 44 : 36, padding: '0 11px', order: isMobile ? 1 : 0, flexBasis: isMobile ? '100%' : 'auto' }}>Show all data →</button>
+            <button onClick={() => close(id)} aria-label="Close readings" style={{ ...BTN, minHeight: isMobile ? 44 : 36, width: isMobile ? 44 : 36, height: isMobile ? 44 : 36, padding: isMobile ? 13 : 10 }}>{CLOSE_ICON}</button>
+          </div>
+        </div>
+      } style={{
+        // the corner grip resizes it to taste; the drag handle is the header bar
+        width: d.site.retired ? RETIRED_W : CARD_W,
+        maxWidth: 'calc(100vw - 48px)', maxHeight: cardMaxHeight(open.indexOf(id)), display: 'flex', flexDirection: 'column',
         // native corner grip: the card resizes and the charts remeasure to fit
-        resize: 'both', overflow: 'hidden', minWidth: (d.isEgg ? EGG_MIN : SOIL_MIN).w, minHeight: (d.isEgg ? EGG_MIN : SOIL_MIN).h,
-        // the bottom sheet: full width, map still visible above, no grip
-        // the sheet hugs its content and never takes more than 45dvh, so the
-        // map stays visible above
-        ...(isMobile && { width: '100%', maxWidth: '100%', minWidth: 0, height: 'auto', maxHeight: '45dvh', minHeight: 0, resize: 'none' as const }),
+        resize: 'both', overflow: 'hidden', minWidth: CARD_MIN.w, minHeight: CARD_MIN.h,
+        // the bottom sheet: full width, no grip, tall enough for one whole chart on short phones, map visible above
+        ...(isMobile && { width: '100%', maxWidth: '100%', minWidth: 0, maxHeight: 'min(max(58dvh, 430px), calc(100dvh - 80px))', minHeight: 0, resize: 'none' as const }),
         background: 'rgba(16,23,32,0.95)', backdropFilter: 'blur(14px)',
         border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
       }}>
-        <div data-drag-handle style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.09)', cursor: 'grab', userSelect: 'none', touchAction: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 21, letterSpacing: '-0.015em', margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}>{d.site.name}</h3>
-            {/* coords and last-updated ride the title's row, one line; on a
-                shrunk card the coords give way first, never the buttons */}
-            <span style={{ fontFamily: RESIPLE, fontSize: 11.5, letterSpacing: '0.06em', color: '#7c909b', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.metaLines[0]}</span>
-            {d.status && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: RESIPLE, fontSize: 11.5, color: d.status.live ? '#4fae7d' : '#7c909b', whiteSpace: 'nowrap' }}>
-                <span style={{ width: 7, height: 7, borderRadius: 999, background: d.status.live ? '#4fae7d' : '#5f7078' }} />
-                {fmtTime(d.status.t)}
-              </span>
-            )}
-            <span style={{ flex: 1 }} />
-            <button onClick={() => openStatic(id)} style={BTN}>Show all data</button>
-            <button onClick={() => close(id)} aria-label="Close readings" style={{ appearance: 'none', cursor: 'pointer', width: 26, height: 26, lineHeight: 1, flexShrink: 0, border: '1px solid rgba(255,255,255,0.22)', background: 'transparent', color: '#a9bcc6', fontFamily: RESIPLE, fontSize: 14 }}>
-              &times;
-            </button>
-          </div>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>{d.readings}</div>
-      </div>
+        {d.readings}
+      </ReadingCard>
     );
   };
   const cards = open.flatMap((id) => {
@@ -441,44 +450,35 @@ export function VisualizationsPage() {
       {/* zIndex 0 makes this a stacking context, so the cards' ever-growing
           bring-to-front z-indexes can never climb over the page chrome or the
           tabular sheet */}
-      {mapView && (
+      {mapView && !staticView && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           <SensorMap sites={sites} selectedIds={open} onSelect={pick} cards={cards} />
         </div>
       )}
-      {/* one temperature unit for every card, parked beside Back - white on
-          the imagery so it reads at a glance */}
-      {mapView && (
-        // one row with the X; on phones the X wraps under the bar
-        <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 40, display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 10 }}>
-          <span style={{
-            display: 'inline-flex', alignSelf: 'flex-start', flexShrink: 0,
-            border: '1px solid #ffffff', overflow: 'hidden',
-            background: 'rgba(14,20,28,0.72)', backdropFilter: 'blur(6px)',
-          }}>
-            {(['F', 'C'] as const).map((u) => (
-              // height pinned so the bar sits exactly as tall as the launcher beside it
-              // a fixed 30px box, not text-width padding: two squares beside
-              // the X's own square, identical at every zoom
-              <button key={u} onClick={() => setUnit(u)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, flexShrink: 0, padding: 0, fontFamily: RESIPLE, fontSize: 12, letterSpacing: 0, background: unit === u ? '#ffffff' : 'transparent', color: unit === u ? '#0e141c' : '#ffffff' }}>
-                &deg;{u}
-              </button>
-            ))}
+      {mapView && !staticView && (
+        <div style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', left: 'max(12px, env(safe-area-inset-left))', right: 'max(12px, env(safe-area-inset-right))', zIndex: 40, display: 'flex', gap: 8, alignItems: 'start' }}>
+          <select aria-label="Find a sensor station" value={open[open.length - 1] ?? ''} onChange={(e) => pick(e.target.value || null)} style={{ minWidth: 0, width: isMobile ? undefined : 260, flex: isMobile ? 1 : undefined, height: 44, padding: '0 10px', border: '1px solid rgba(255,255,255,.5)', borderRadius: 0, color: '#fff', background: '#141c26', fontFamily: RESIPLE, fontSize: 16 }}>
+            <option value="">Find a station</option>
+            {sites.map((site) => <option key={site.id} value={site.id}>{isMobile ? site.name.replace(' (NEWA)', '') : site.name}{site.retired ? ' (inactive)' : ''}</option>)}
+          </select>
+          {!isMobile && <span style={{ flex: 1 }} />}
+          <span role="group" aria-label="Temperature units" style={{ display: 'inline-flex', flexShrink: 0, border: '1px solid rgba(255,255,255,.5)', background: '#141c26' }}>
+            {(['F', 'C'] as const).map((u) => <button key={u} aria-label={`Degrees ${u === 'F' ? 'Fahrenheit' : 'Celsius'}`} aria-pressed={unit === u} onClick={() => setUnit(u)} style={{ appearance: 'none', border: 0, width: 43, height: 42, padding: 0, fontFamily: RESIPLE, fontSize: 14, cursor: 'pointer', background: unit === u ? '#fff' : 'transparent', color: unit === u ? '#0e141c' : '#fff' }}>°{u}</button>)}
           </span>
-          <StageClose style={{ border: '1px solid #ffffff', background: 'rgba(14,20,28,0.72)', color: '#ffffff' }} />
+          <StageClose />
         </div>
       )}
       {/* ---- the static sheet: the pre-globe sensors page over the stage ---- */}
       {staticView && (
         // top padding clears the fixed site header, which stays for this sheet
-        <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: '#0e141c', overflowY: 'auto', padding: `${((document.querySelector('.site-header') as HTMLElement | null)?.offsetHeight ?? 102) + 26}px clamp(16px,5vw,48px) 96px` }}>
+        <div style={{ position: 'absolute', inset: 0, top: (document.querySelector('.site-header') as HTMLElement | null)?.offsetHeight ?? 102, zIndex: 30, background: '#0e141c', overflowY: 'auto', overscrollBehavior: 'contain', padding: '16px clamp(16px,5vw,48px) max(48px, env(safe-area-inset-bottom))' }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
             {/* one line, even at 390px: unlabeled dropdowns (Month / °F speak
                 for themselves), compact tabs, launcher on the right */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: isMobile ? 6 : 12 }}>
+            <div style={{ position: 'sticky', top: -16, zIndex: 2, padding: '12px 0', background: '#0e141c', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: isMobile ? 6 : 12 }}>
               <div style={{ display: 'inline-flex', border: `2px solid ${TAB_TONE[staticView]}`, overflow: 'hidden' }}>
                 {([['air', isMobile ? 'AQ Egg' : 'Air Quality'], ['weather', 'Weather'], ['soil', isMobile ? 'Soil' : 'Soil Moisture']] as const).map(([id, label]) => (
-                  <button key={id} onClick={() => setStaticView(id)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', padding: isMobile ? '9px 9px' : '10px 14px', fontFamily: RESIPLE, fontSize: isMobile ? 11 : 13, letterSpacing: isMobile ? '0.06em' : '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: staticView === id ? TAB_TONE[id] : 'transparent', color: staticView === id ? '#0e141c' : '#7c909b' }}>
+                  <button key={id} aria-pressed={staticView === id} onClick={() => setStaticView(id)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', minHeight: 44, padding: isMobile ? '10px 12px' : '10px 14px', fontFamily: RESIPLE, fontSize: 13, letterSpacing: isMobile ? '0.06em' : '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: staticView === id ? TAB_TONE[id] : 'transparent', color: staticView === id ? '#0e141c' : '#7c909b' }}>
                     {label}
                   </button>
                 ))}
@@ -488,33 +488,35 @@ export function VisualizationsPage() {
                   weather panels, so it sits out the soil tab */}
               {staticView !== 'soil' && (
                 <select
+                  aria-label="Temperature units"
                   value={unit}
                   onChange={(e) => setUnit(e.target.value as 'C' | 'F')}
-                  style={{ appearance: 'none', cursor: 'pointer', height: 33, padding: isMobile ? '0 8px' : '0 14px', border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 12.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                  style={{ appearance: 'none', cursor: 'pointer', height: 44, padding: isMobile ? '0 8px' : '0 14px', border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 16, letterSpacing: '0.02em', textTransform: 'uppercase' }}
                 >
                   {(['F', 'C'] as const).map((u) => <option key={u} value={u}>&deg;{u}</option>)}
                 </select>
               )}
-              {/* the window every chart and Download share */}
+              {/* the window every chart and download share */}
               <select
+                aria-label="Reading time range"
                 value={range}
                 onChange={(e) => setRange(e.target.value as TimeRange)}
-                style={{ appearance: 'none', cursor: 'pointer', height: 33, padding: isMobile ? '0 8px' : '0 14px', border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 12.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                style={{ appearance: 'none', cursor: 'pointer', height: 44, padding: isMobile ? '0 8px' : '0 14px', border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 16, letterSpacing: '0.02em', textTransform: 'uppercase' }}
               >
                 {RANGES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               {/* the sheet's X rides the row's right end, styled and sized
                   like the dropdowns beside it */}
-              <StageClose style={{ height: 33, width: 33, border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', backdropFilter: 'none' }} />
+              <StageClose style={{ height: 44, width: 44, border: '1px solid rgba(255,255,255,0.22)', background: '#141c26', backdropFilter: 'none' }} />
             </div>
             {staticView === 'air' && EGGS.map((egg) => (
-              <details key={egg.id} id={`static-${egg.id}`} open style={{ background: '#141c26', border: `1px solid ${AIR}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: 16 }}>
+              <details key={egg.id} id={`static-${egg.id}`} open style={{ background: '#141c26', border: `1px solid ${AIR}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: isMobile ? 140 : 90 }}>
                 <summary style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 18px' }}>
                   <span className="chev" style={{ color: '#7c909b', alignSelf: 'center' }} />
                   <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(24px,3vw,32px)', letterSpacing: '-0.015em', margin: 0 }}>{egg.name}</h3>
                   <span style={{ fontFamily: RESIPLE, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7c909b' }}>{egg.location}</span>
                   <span style={{ flex: 1 }} />
-                  <button onClick={(e) => { e.preventDefault(); download(egg.id); }} style={BTN}>Download</button>
+                  <DownloadButton name={egg.name} onDownload={() => download(egg.id)} />
                 </summary>
                 <div style={{ marginTop: 28 }}>
                   {(() => {
@@ -529,14 +531,14 @@ export function VisualizationsPage() {
             {staticView === 'soil' && SOILMOTES.map((mote) => {
               const pts = soilPtsFor(mote.id, range);
               return (
-                <details key={mote.id} id={`static-${mote.id}`} open style={{ background: '#141c26', border: `1px solid ${SOIL}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: 16 }}>
+                <details key={mote.id} id={`static-${mote.id}`} open style={{ background: '#141c26', border: `1px solid ${SOIL}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: isMobile ? 140 : 90 }}>
                   <summary style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 18px' }}>
                     <span className="chev" style={{ color: '#7c909b', alignSelf: 'center' }} />
                     <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(24px,3vw,32px)', letterSpacing: '-0.015em', margin: 0 }}>{mote.name}</h3>
                     {/* coords are dead weight on a phone-width summary line */}
                     <span style={{ fontFamily: RESIPLE, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7c909b' }}>{isMobile ? mote.location : `${mote.location} ${mote.coords}`}</span>
                     <span style={{ flex: 1 }} />
-                    <button onClick={(e) => { e.preventDefault(); download(mote.id); }} style={BTN}>Download</button>
+                    <DownloadButton name={mote.name} onDownload={() => download(mote.id)} />
                   </summary>
                   <div style={{ marginTop: 28 }}>
                     {soil.status === 'loading' ? <Note>Contacting the probe&hellip;</Note>
@@ -550,14 +552,14 @@ export function VisualizationsPage() {
               <div style={{ marginTop: 40 }}>
                 <div style={{ fontFamily: RESIPLE, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7c909b' }}>Inactive Sensors</div>
                 {RETIRED.map((r) => (
-                  <details key={r.name} id={`static-${r.name}`} open style={{ background: '#141c26', border: `1px solid ${SOIL}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: 16 }}>
+                  <details key={r.name} id={`static-${r.name}`} open style={{ background: '#141c26', border: `1px solid ${SOIL}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: isMobile ? 140 : 90 }}>
                     <summary style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 18px' }}>
                       <span className="chev" style={{ color: '#7c909b', alignSelf: 'center' }} />
                       <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(24px,3vw,32px)', letterSpacing: '-0.015em', margin: 0 }}>{r.name}</h3>
-                      {/* phones: bare date range, so name + dates + Download share one line */}
+                      {/* phones: bare date range, so name + dates + download share one line */}
                       <span style={{ fontFamily: RESIPLE, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7c909b' }}>{isMobile ? `(${r.from} - ${r.to})` : `Active: (${r.from} - ${r.to}) | Coords: ${r.coords}`}</span>
                       <span style={{ flex: 1 }} />
-                      <button onClick={(e) => { e.preventDefault(); download(r.name); }} style={BTN}>Download</button>
+                      <DownloadButton name={r.name} onDownload={() => download(r.name)} />
                     </summary>
                     <div style={{ marginTop: 28 }}>
                       {/* retired probes are all history - the window doesn't apply */}
@@ -570,13 +572,13 @@ export function VisualizationsPage() {
             {staticView === 'weather' && NEWA_STATIONS.map((st) => {
               const series = wxSeriesFor(st.id, range);
               return (
-                <details key={st.id} id={`static-${st.id}`} open style={{ background: '#141c26', border: `1px solid ${WEATHER}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: 16 }}>
+                <details key={st.id} id={`static-${st.id}`} open style={{ background: '#141c26', border: `1px solid ${WEATHER}`, padding: 'clamp(20px,3.5vw,36px)', marginTop: 24, scrollMarginTop: isMobile ? 140 : 90 }}>
                   <summary style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 18px' }}>
                     <span className="chev" style={{ color: '#7c909b', alignSelf: 'center' }} />
                     <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(24px,3vw,32px)', letterSpacing: '-0.015em', margin: 0 }}>{st.name}</h3>
                     <span style={{ fontFamily: RESIPLE, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7c909b' }}>{isMobile ? st.location : `${st.location} ${Math.abs(st.lat).toFixed(2)}° N, ${Math.abs(st.lon).toFixed(2)}° W`}</span>
                     <span style={{ flex: 1 }} />
-                    <button onClick={(e) => { e.preventDefault(); download(st.id); }} style={BTN}>Download</button>
+                    <DownloadButton name={st.name} onDownload={() => download(st.id)} />
                   </summary>
                   <div style={{ marginTop: 28 }}>
                     {!(st.id in wx) ? <Note>Contacting the station&hellip;</Note>
@@ -602,24 +604,32 @@ export function VisualizationsPage() {
       )}
       {(lidarView || hexapodView) && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
-          {noWebGL ? (
+          {noWebGL === null ? (
+            <div role="status" style={{ padding: 24, fontFamily: RESIPLE, color: '#a9bcc6' }}>Loading 3D view…</div>
+          ) : noWebGL || viewerFailed ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: `#0e141c url(${VISUALIZATIONS.find((v) => v.id === (hexapodView ? 'hexapod' : 'lidar'))?.thumb}) center/cover` }}>
-              <div style={{ maxWidth: 420, padding: 26, background: 'rgba(14,20,28,0.92)', border: '1px solid rgba(255,255,255,0.15)', fontFamily: RESIPLE, fontSize: 15, lineHeight: 1.6, color: '#e6ecf0' }}>
-                This viewer needs WebGL, which this browser has turned off or does not support. Turn on hardware acceleration, or open the page in another browser.
+              <div style={{ maxWidth: 420, maxHeight: 'calc(100dvh - 96px)', overflowY: 'auto', padding: 26, background: 'rgba(14,20,28,0.92)', border: '1px solid rgba(255,255,255,0.15)', fontFamily: RESIPLE, fontSize: 15, lineHeight: 1.6, color: '#e6ecf0' }}>
+                <h2 style={{ margin: '0 0 12px', fontSize: 24 }}>{hexapodView ? 'Explore the Hexapod MKII' : 'Explore Ithaca in 3D'}</h2>
+                <p>The interactive view could not start on this device. You can retry or explore the project below.</p>
+                {hexapodView && <video controls playsInline preload="none" poster="/projects/hexapod-walk.webp" src="/projects/hexapod-walk.mp4" style={{ width: '100%', marginBottom: 16 }} />}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button style={BTN} onClick={() => { setNoWebGL(!supportsWebGL2()); setViewerFailed(false); setViewerAttempt((n) => n + 1); }}>Retry 3D</button>
+                  <a href={hexapodView ? '#/posts/lidar-hexapod' : '#/sensors'} style={{ ...BTN, display: 'inline-flex', alignItems: 'center' }}>{hexapodView ? 'Read about the project' : 'Explore other data'}</a>
+                </div>
               </div>
             </div>
           ) : (
-            <iframe src={hexapodView ? '/hexapod/' : '/lidar/'} title={hexapodView ? 'Interactive Hexapod MKII' : 'Ithaca semantic LiDAR viewer'} allow="fullscreen" style={{ width: '100%', height: '100%', border: 0 }} />
+            <iframe key={viewerAttempt} className="geodata-viewer" onError={() => setViewerFailed(true)} src={hexapodView ? '/hexapod/' : '/lidar/'} title={hexapodView ? 'Interactive Hexapod MKII' : 'Ithaca semantic LiDAR viewer'} allow="fullscreen" style={{ width: '100%', height: '100%', border: 0 }} />
           )}
-          <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 5 }}>
-            <StageClose />
+          <div style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', right: 'max(12px, env(safe-area-inset-right))', zIndex: 5 }}>
+            <StageClose style={VIEWER_CLOSE} />
           </div>
         </div>
       )}
       {forecastView && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
           <WeatherForecast />
-          <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 5 }}>
+          <div style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', right: 'max(12px, env(safe-area-inset-right))', zIndex: 5 }}>
             <StageClose />
           </div>
         </div>
@@ -627,7 +637,7 @@ export function VisualizationsPage() {
       {verifyView && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
           <WeatherVerify />
-          <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 5 }}>
+          <div style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', right: 'max(12px, env(safe-area-inset-right))', zIndex: 5 }}>
             <StageClose />
           </div>
         </div>
@@ -640,10 +650,63 @@ export function VisualizationsPage() {
 // link, so the hash change resets every stage and closes open cards
 function StageClose({ style }: { style?: CSSProperties }) {
   return (
-    <a href="#/sensors" aria-label="Back to visualizations" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', width: 32, height: 32, flex: '0 0 auto', alignSelf: 'flex-start', aspectRatio: '1', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(14,20,28,0.82)', backdropFilter: 'blur(6px)', color: '#e6ecf0', fontFamily: RESIPLE, fontSize: 20, lineHeight: 1, ...style }}>×</a>
+    <a href="#/sensors" aria-label="Back to visualizations" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', width: 44, height: 44, flex: '0 0 auto', alignSelf: 'flex-start', aspectRatio: '1', padding: 13, border: '1px solid rgba(255,255,255,.5)', background: '#141c26', color: '#e6ecf0', ...style }}>{CLOSE_ICON}</a>
+  );
+}
+
+// A readings card opens on whole charts: it ends at the last row that fits, never partway through one, and the
+// rest scroll. It re-fits as charts load in or the window changes, until someone takes the corner grip.
+function ReadingCard({ label, style, header, bodyPadding, children }: { label: string; style: CSSProperties; header: ReactNode; bodyPadding: string | number; children: ReactNode }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const chartsRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = cardRef.current!, body = bodyRef.current!, charts = chartsRef.current!;
+    const fit = () => {
+      const top = charts.getBoundingClientRect().top;
+      const bottoms = [...charts.querySelectorAll('[data-plate]')].map((plate) => plate.getBoundingClientRect().bottom - top);
+      const { paddingTop, paddingBottom } = getComputedStyle(body);
+      const chrome = card.offsetHeight - body.clientHeight + parseFloat(paddingTop) + parseFloat(paddingBottom);
+      const height = wholeRowsHeight(bottoms, chrome, parseFloat(getComputedStyle(card).maxHeight));
+      card.style.height = height === null ? '' : `${height}px`;
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(charts);
+    window.addEventListener('resize', fit);
+    const stop = () => { observer.disconnect(); window.removeEventListener('resize', fit); };
+    // the grip belongs to the card itself; everything else on it is a child
+    const onGrip = (e: PointerEvent) => { if (e.target === card) stop(); };
+    card.addEventListener('pointerdown', onGrip);
+    return () => { stop(); card.removeEventListener('pointerdown', onGrip); };
+  }, []);
+  return (
+    <div ref={cardRef} className="sensor-reading-card" role="region" aria-label={label} style={style}>
+      {header}
+      <div ref={bodyRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: bodyPadding }}>
+        <div ref={chartsRef}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// a sensor's CSV download: the icon alone, in the page's square button
+function DownloadButton({ name, onDownload }: { name: string; onDownload: () => void }) {
+  return (
+    <button aria-label={`Download ${name} data`} title="Download CSV" onClick={(e) => { e.preventDefault(); onDownload(); }} style={{ ...BTN, width: 44, height: 44, padding: 12 }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block' }}><path d="M12 3v12M6.5 10l5.5 5.5 5.5-5.5M4 20.5h16" /></svg>
+    </button>
   );
 }
 
 function Note({ children }: { children: ReactNode }) {
   return <div style={{ fontFamily: RESIPLE, fontSize: 14.5, color: '#7c909b' }}>{children}</div>;
+}
+
+function supportsWebGL2() {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return false;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch { return false; }
 }

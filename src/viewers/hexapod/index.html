@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0e141c" />
   <title>Cornell GeoData: Hexapod</title>
-  <meta name="description" content="Explore the Hexapod MKII in 3D. Select a leg, adjust its joints, and inspect the moving linkages." />
+  <meta name="description" content="Explore the Hexapod MKII in 3D. Select a leg, adjust its joints, and inspect each part." />
 </head>
 <body>
   <div id="view" role="main" tabindex="0" aria-label="Interactive hexapod. Click a leg to select it. Drag to orbit, scroll to zoom, or use arrow keys to pan."></div>
@@ -36,16 +36,15 @@
       </details>
       <details class="control-section">
         <summary>Display</summary>
-        <div class="quality-row"><label for="model">Model</label><select id="model" disabled><option value="linkage">Linkage</option><option value="serial">Serial</option></select></div>
         <label class="class-row"><input id="colors" type="checkbox" checked />Link colors</label>
-        <label class="class-row"><input id="collisions" type="checkbox" />Collision shapes</label>
+        <a id="full-detail" href="?detail=full" hidden>Load full detail</a>
       </details>
     </details>
   </aside>
   <div id="loading" role="status"><span class="pulse"></span><span id="load-message">Opening the hexapod…</span></div>
   <section id="point-info" hidden aria-label="Selected robot part"><button id="close-point" aria-label="Close part details">×</button><div id="point-details" role="status"></div></section>
-  <details class="about"><summary><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 5.5v1"/></svg><span class="about-label">About this model</span></summary><div class="about-content"><p>Hexapod MKII by Cornell Physical Intelligence and GeoData.</p><p>This model is intended for testing balance and finding effective walking policies in simulators such as NVIDIA Isaac Sim.<span class="wide-only"> Simulating foot contact, friction, and ground forces helps evaluate how the robot walks and stays stable.</span></p><p class="wide-only">This browser view previews the robot’s geometry and joint motion.</p><dl><dt>Model</dt><dd id="model-info">Linkage</dd><dt>Mass</dt><dd id="mass">—</dd><dt>Foot clearance</dt><dd id="clearance">—</dd></dl><a href="https://github.com/Cornell-Physical-Intelligence/hexapod-cupi" target="_blank" rel="noopener">Robot source ↗</a></div></details>
-  <footer><div class="hint">Click a leg to select. Drag to orbit, scroll to zoom, right-drag to pan.</div></footer>
+  <details class="about"><summary aria-label="About this model and touch controls"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 5.5v1"/></svg><span class="about-label">About this model</span></summary><div class="about-content"><p>One finger rotates. Pinch to zoom; move two fingers to pan. Tap a part to inspect it.</p><p>Hexapod MKII by Cornell Physical Intelligence and GeoData.</p><p>This model is intended for testing balance and finding effective walking policies in simulators such as NVIDIA Isaac Sim.<span class="wide-only"> Simulating foot contact, friction, and ground forces helps evaluate how the robot walks and stays stable.</span></p><p class="wide-only">This browser view previews the robot’s geometry and joint motion.</p><dl><dt>Drive</dt><dd>18 direct-drive joints</dd><dt>Mass</dt><dd id="mass"></dd><dt>Foot clearance</dt><dd id="clearance"></dd></dl><a href="https://github.com/Cornell-Physical-Intelligence/hexapod-cupi" target="_blank" rel="noopener">Robot source ↗</a></div></details>
+  <footer><div class="hint" id="hint">Click a leg to select. Drag to orbit, scroll to zoom, right-drag to pan.</div></footer>
   <script type="module" src="/src/viewers/hexapod/main.js"></script>
 </body>
 </html>

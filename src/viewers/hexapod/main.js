@@ -5,15 +5,23 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
 import { animationPose, phaseForJoint } from './motion.js';
 import { describePart } from './parts.js';
+import { onTap } from '../lidar/tap.js';
 
 const $ = id => document.getElementById(id);
 const LEGS = ['lf', 'lm', 'lr', 'rf', 'rm', 'rr'];
 const KINDS = ['coxa_yaw', 'femur_pitch', 'tibia_pitch'];
 const NAMES = { lf: 'Left front', lm: 'Left middle', lr: 'Left rear', rf: 'Right front', rm: 'Right middle', rr: 'Right rear' };
-const TINT = { body: 0xcad7e5, coxa: 0xb49ddc, femur: 0x8dbdff, tibia: 0x80ddba, tibia_push_lever: 0xf3bc72, tibia_pushrod: 0xea9490 };
+const TINT = { body: 0xcad7e5, coxa: 0xb49ddc, femur: 0x8dbdff, tibia: 0x80ddba };
 const BASE = new URL('/hexapod/model/', location.href);
 const rad = THREE.MathUtils.degToRad;
 const deg = THREE.MathUtils.radToDeg;
+const compactScreen = matchMedia('(max-width: 720px), (pointer: coarse), (max-width: 1100px) and (max-height: 500px)');
+const updateHint = () => {
+  const hint = compactScreen.matches ? 'One finger rotates · pinch to zoom · two fingers pan. Tap a part to inspect.' : 'Click a leg to select. Drag to orbit, scroll to zoom, right-drag to pan.';
+  $('hint').textContent = hint;
+  $('view').setAttribute('aria-label', `Interactive hexapod. ${hint} Arrow keys pan; choose a leg and adjust its joints in controls.`);
+};
+updateHint();
 
 async function start() {
   const fetchFile = async path => {
@@ -21,11 +29,23 @@ async function start() {
     if (!response.ok) throw new Error(`Could not load ${path}. Please reload to try again.`);
     return response;
   };
-  const [stance, limits, models] = await Promise.all(
-    ['stance_v2.json', 'joint_limits.json', 'models.json'].map(async path => (await fetchFile(path)).json()),
-  );
-  const stancePose = Object.fromEntries(LEGS.flatMap(leg => KINDS.map(kind => [`${leg}_${kind}`, stance[`${kind}_rad`]])));
-  let q = { ...stancePose }, robot, selectedPart, footSpheres = [], ready = false;
+  // active_model.json is the source repository's own record of which robot is current.
+  const active = await (await fetchFile('active_model.json')).json();
+  let display = null;
+  if (compactScreen.matches && new URLSearchParams(location.search).get('detail') !== 'full') {
+    const response = await fetch(`/hexapod/display/${active.id}/manifest.json`);
+    if (response.ok) {
+      const manifest = await response.json();
+      if (manifest.urdf_sha256 === active.urdf.sha256) display = manifest;
+    }
+  }
+  $('full-detail').hidden = !display;
+  const stance = await (await fetchFile(`${active.id}/stance.json`)).json();
+  const stancePose = Object.fromEntries(stance.joint_names.map((name, index) => [name, stance.nominal_joint_position_rad[index]]));
+  const toes = stance.toe_names.map((link, index) => ({ link, point: new THREE.Vector3(...stance.toe_local_points_m[index]) }));
+  // How far the toe surface reaches below each recorded toe point, from the recorded standing height.
+  const toeRadius = stance.root_height_m + Math.min(...stance.neutral_feet_body_m.map(foot => foot[2]));
+  let q = { ...stancePose }, limits = {}, robot, selectedPart, ready = false;
   let motorHousings = [];
   let playing = false, phase = 0, lastTime = 0, motionTime = 0, animationBase = {};
   let frame = 0;
@@ -39,8 +59,9 @@ async function start() {
   scene.fog = new THREE.Fog('#0e141c', 1.8, 4);
   const camera = new THREE.PerspectiveCamera(36, 1, 0.005, 20);
   camera.up.set(0, 0, 1);
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: !compactScreen.matches });
+  renderer.setPixelRatio(compactScreen.matches ? 1 : Math.min(devicePixelRatio, 2));
+  renderer.domElement.addEventListener('webglcontextlost', () => showError(new Error('The 3D view was interrupted. Reload to try again.')));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   stage.append(renderer.domElement);
   const orbit = new OrbitControls(camera, renderer.domElement);
@@ -66,25 +87,30 @@ async function start() {
   const panel = document.querySelector('.panel');
   const resize = () => {
     const { width, height } = stage.getBoundingClientRect();
-    const nextFraming = width > 720 ? 1 : Math.max(1, height / width * 0.9);
+    const nextFraming = compactScreen.matches ? Math.max(1, height / width * 0.9) : 1;
     camera.position.sub(orbit.target).multiplyScalar(nextFraming / framing).add(orbit.target);
     framing = nextFraming;
     orbit.maxDistance = Math.max(3, framing * 2);
     camera.aspect = width / height;
     // Reserve room for the floating panel without shrinking the canvas.
-    const wide = width > 720;
-    camera.setViewOffset(width, height, panel.open && wide ? -140 : 0, panel.open && !wide ? height * 0.22 : 0, width, height);
+    const wide = !compactScreen.matches || (width > height && height <= 500);
+    const panelBounds = panel.getBoundingClientRect();
+    const top = stage.getBoundingClientRect().top;
+    const verticalOffset = panel.open && !wide ? (height - (panelBounds.top - top)) / 2 : 0;
+    camera.setViewOffset(width, height, panel.open && wide ? -140 : 0, verticalOffset, width, height);
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(compactScreen.matches ? 1 : Math.min(devicePixelRatio, 2));
     renderer.setSize(width, height);
     requestRender();
   };
   const observer = new ResizeObserver(resize);
   observer.observe(stage);
   panel.addEventListener('toggle', resize);
+  compactScreen.addEventListener('change', () => { updateHint(); resize(); });
   resize();
   const views = { iso: [0.90, -1.05, 0.68], top: [0, -0.001, 1.5], front: [0, -1.4, 0.25], side: [1.4, 0, 0.25] };
   function setView(name) {
-    orbit.target.set(0, 0, 0.13);
+    orbit.target.set(0, 0, 0.08);
     camera.position.set(...views[name]).sub(orbit.target).multiplyScalar(framing).add(orbit.target);
     orbit.update();
     document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', button.dataset.view === name));
@@ -92,7 +118,6 @@ async function start() {
   document.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => setView(button.dataset.view); });
   setView('iso');
 
-  const colliderAncestor = object => { for (let node = object; node; node = node.parent) if (node.isURDFCollider) return node; return null; };
   const linkAncestor = object => { for (let node = object; node; node = node.parent) if (node.isURDFLink) return node; return null; };
   function indexMotors() {
     motorHousings = [];
@@ -100,12 +125,13 @@ async function start() {
       const link = robot.links[`${leg}_${segment}`];
       const housings = [];
       link.traverse(mesh => {
-        if (mesh.userData.file === 'motor_1_1_06_eb463_507.stl') housings.push(mesh);
+        if (mesh.userData.file?.startsWith('mesh_004_') && linkAncestor(mesh) === link) housings.push(mesh);
       });
-      // The housing at the femur pivot drives the femur; the second drives the tibia.
+      // Direct drive: the coxa carries its own motor on the yaw axis and, farther
+      // out, the motor that drives the femur. The femur carries the tibia's motor.
       const distance = mesh => link.worldToLocal(mesh.getWorldPosition(new THREE.Vector3())).lengthSq();
       housings.sort((a, b) => distance(a) - distance(b));
-      housings.forEach((mesh, index) => motorHousings.push({ mesh, leg, kind: segment === 'coxa' ? 'coxa' : index === 0 ? 'femur' : 'tibia' }));
+      housings.forEach((mesh, index) => motorHousings.push({ mesh, leg, kind: segment === 'femur' ? 'tibia' : index === 0 ? 'coxa' : 'femur' }));
     }
   }
   function motorForPart(mesh, link) {
@@ -123,14 +149,9 @@ async function start() {
     };
     return candidates.reduce((nearest, candidate) => distance(candidate) < distance(nearest) ? candidate : nearest);
   }
-  const collisionMaterial = new THREE.MeshBasicMaterial({ color: 0x80ddba, wireframe: true, transparent: true, opacity: 0.45, depthTest: false });
   function paint() {
     robot?.traverse(object => {
       if (!object.isMesh) return;
-      const collision = Boolean(colliderAncestor(object));
-      object.userData.collision = collision;
-      object.visible = !collision || $('collisions').checked;
-      if (collision) { object.material = collisionMaterial; object.renderOrder = 1; return; }
       if (!object.userData.cadColor) { object.material = object.material.clone(); object.userData.cadColor = object.material.color.clone(); }
       const link = linkAncestor(object)?.name || 'body';
       const kind = link === 'body' ? 'body' : link.split('_').slice(1).join('_');
@@ -149,11 +170,16 @@ async function start() {
     $('point-info').hidden = true;
     paint();
   }
-  for (const id of ['collisions', 'colors']) $(id).onchange = paint;
+  $('colors').onchange = paint;
 
   function syncControls(editing = false) {
     for (const kind of KINDS) {
-      const value = deg(q[`${$('leg').value}_${kind}`]);
+      const name = `${$('leg').value}_${kind}`, value = deg(q[name]);
+      // Coxa travel differs by leg, so the range follows the selected leg.
+      for (const prefix of ['s', 'n']) {
+        $(`${prefix}_${kind}`).min = Math.ceil(deg(limits[name].lower) * 10) / 10;
+        $(`${prefix}_${kind}`).max = Math.floor(deg(limits[name].upper) * 10) / 10;
+      }
       $(`s_${kind}`).value = value;
       if (!editing || document.activeElement !== $(`n_${kind}`)) $(`n_${kind}`).value = value.toFixed(1);
     }
@@ -162,9 +188,9 @@ async function start() {
     q = { ...values };
     for (const [name, value] of Object.entries(q)) robot?.setJointValue(name, value);
     syncControls(editing);
-    if (robot && footSpheres.length) {
+    if (robot) {
       robot.updateMatrixWorld(true);
-      const lowest = Math.min(...footSpheres.map(({ link, center, radius }) => center.clone().applyMatrix4(robot.links[link].matrixWorld).z - radius));
+      const lowest = Math.min(...toes.map(({ link, point }) => point.clone().applyMatrix4(robot.links[link].matrixWorld).z)) - toeRadius;
       $('clearance').textContent = `${(lowest * 1000).toFixed(1)} mm`;
       $('clearance').style.color = lowest < 0 ? '#ffb6ac' : '';
     }
@@ -179,8 +205,8 @@ async function start() {
   function manualJoint(kind, value) {
     pause();
     if (!Number.isFinite(value)) { syncControls(); return; }
-    const { lower, upper } = limits[kind];
-    setPose({ ...q, [`${$('leg').value}_${kind}`]: THREE.MathUtils.clamp(rad(value), lower, upper) }, true);
+    const name = `${$('leg').value}_${kind}`, { lower, upper } = limits[name];
+    setPose({ ...q, [name]: THREE.MathUtils.clamp(rad(value), lower, upper) }, true);
   }
   for (const kind of KINDS) {
     const row = document.createElement('div');
@@ -189,11 +215,6 @@ async function start() {
     row.className = 'joint';
     row.innerHTML = `<div class="joint-heading"><label for="s_${kind}">${name}</label><div class="joint-value"><input id="n_${kind}" type="number" step="0.1" aria-label="${name} angle in degrees"/><span>°</span></div></div><input id="s_${kind}" type="range" step="0.1" aria-label="${name} joint"/>`;
     $('joints').append(row);
-    for (const prefix of ['s', 'n']) {
-      const input = $(`${prefix}_${kind}`);
-      input.min = Math.ceil(deg(limits[kind].lower) * 10) / 10;
-      input.max = Math.floor(deg(limits[kind].upper) * 10) / 10;
-    }
     $(`s_${kind}`).oninput = event => manualJoint(kind, event.target.valueAsNumber);
     $(`n_${kind}`).oninput = event => { if (Number.isFinite(event.target.valueAsNumber)) manualJoint(kind, event.target.valueAsNumber); };
     $(`n_${kind}`).onblur = () => syncControls();
@@ -205,57 +226,49 @@ async function start() {
     if (!previous) return;
     scene.remove(previous);
     previous.traverse(object => {
-      if (object.material && object.material !== collisionMaterial) object.material.dispose();
+      if (object.material) object.material.dispose();
       if (object.geometry && !object.userData.file) object.geometry.dispose();
     });
   }
-  async function loadModel(mode) {
-    pause();
-    clearPart();
-    ready = false;
-    $('model').disabled = $('joint-controls').disabled = $('motion-controls').disabled = true;
-    $('loading').hidden = false;
-    $('load-message').textContent = 'Opening the hexapod…';
-    const spec = models[mode];
-    const text = await (await fetchFile(spec.urdf)).text();
+  async function loadModel() {
+    // The repository paths start at robot/; the model folder mirrors that tree.
+    const urdf = active.urdf.path.replace(/^robot\//, '');
+    const text = await (await fetchFile(urdf)).text();
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    if ([...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('') !== spec.sha256) throw new Error('The robot model does not match its source. Please reload.');
+    if ([...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('') !== active.urdf.sha256) throw new Error('The robot model does not match its source. Please reload.');
     const xml = new DOMParser().parseFromString(text, 'application/xml');
-    footSpheres = [...xml.querySelectorAll('link')].filter(link => link.getAttribute('name').endsWith('_tibia')).flatMap(link => [...link.querySelectorAll('collision')].filter(c => c.querySelector('sphere')).map(c => ({ link: link.getAttribute('name'), center: new THREE.Vector3(...c.querySelector('origin').getAttribute('xyz').split(/\s+/).map(Number)), radius: Number(c.querySelector('sphere').getAttribute('radius')) })));
     $('mass').textContent = `${[...xml.querySelectorAll('inertial > mass')].reduce((sum, node) => sum + Number(node.getAttribute('value')), 0).toFixed(2)} kg`;
     const loader = new URDFLoader();
-    loader.packages = { hexapod_mkii_assy: BASE.href };
-    loader.parseCollision = true;
     const pending = [];
     loader.loadMeshCb = (path, manager, done) => {
-      if (!geometries.has(path)) geometries.set(path, new STLLoader(manager).loadAsync(path).then(geometry => { geometry.computeVertexNormals(); return geometry; }));
+      const file = path.split('/').pop();
+      const displayPath = display?.files[file] ? `/hexapod/display/${active.id}/meshes/${file}` : path;
+      if (!geometries.has(path)) geometries.set(path, new STLLoader(manager).loadAsync(displayPath).then(geometry => { geometry.computeVertexNormals(); return geometry; }));
       pending.push(geometries.get(path).then(geometry => {
         const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0xc0ccdb, metalness: 0.28, roughness: 0.5 }));
-        mesh.userData.file = path.split('/').pop();
+        mesh.userData.file = file;
         done(mesh);
       }));
     };
-    const next = loader.parse(text, BASE.href);
+    const next = loader.parse(text, new URL('./', new URL(urdf, BASE)).href);
     await Promise.all(pending);
-    disposeRobot(robot);
     robot = next;
+    limits = Object.fromEntries(Object.entries(robot.joints).map(([name, joint]) => [name, joint.limit]));
     robot.position.z = stance.reset_root_height_m;
     scene.add(robot);
     paint();
     setPose(q);
     indexMotors();
-    $('model-info').textContent = mode === 'linkage' ? 'Linkage' : 'Serial';
-    $('model').disabled = $('joint-controls').disabled = $('motion-controls').disabled = false;
+    $('joint-controls').disabled = $('motion-controls').disabled = false;
     $('loading').hidden = true;
     ready = true;
   }
-  $('model').onchange = () => loadModel($('model').value).catch(showError);
   $('play').onclick = () => {
     if (playing) { pause(); return; }
     if (!ready) return;
     animationBase = { ...q };
-    const kind = $('motion-joint').value;
-    if ($('motion').value === 'joint') phase = phaseForJoint(q[`${$('leg').value}_${kind}`], limits[kind].lower, limits[kind].upper);
+    const name = `${$('leg').value}_${$('motion-joint').value}`;
+    if ($('motion').value === 'joint') phase = phaseForJoint(q[name], limits[name].lower, limits[name].upper);
     motionTime = 0;
     lastTime = performance.now();
     playing = true;
@@ -270,13 +283,11 @@ async function start() {
     $('sweep-controls').hidden = $('motion').value !== 'joint';
   };
   const raycaster = new THREE.Raycaster();
-  let pointerStart;
-  renderer.domElement.addEventListener('pointerdown', event => { pointerStart = [event.clientX, event.clientY]; });
-  renderer.domElement.addEventListener('pointerup', event => {
-    if (!ready || !pointerStart || Math.hypot(event.clientX - pointerStart[0], event.clientY - pointerStart[1]) > 5) return;
+  onTap(renderer.domElement, event => {
+    if (!ready) return;
     const rect = renderer.domElement.getBoundingClientRect();
     raycaster.setFromCamera(new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1), camera);
-    const hit = raycaster.intersectObject(robot, true).find(hit => hit.object.isMesh && hit.object.visible && !hit.object.userData.collision);
+    const hit = raycaster.intersectObject(robot, true).find(hit => hit.object.isMesh);
     if (!hit) { clearPart(); return; }
     selectedPart = hit.object;
     const link = linkAncestor(hit.object);
@@ -320,12 +331,11 @@ async function start() {
     orbit.dispose();
     disposeRobot(robot);
     geometries.forEach(promise => promise.then(geometry => geometry.dispose()).catch(() => {}));
-    collisionMaterial.dispose();
     grid.geometry.dispose();
     grid.material.dispose();
     renderer.dispose();
   });
-  await loadModel('linkage');
+  await loadModel();
   setPose(stancePose);
 }
 
@@ -333,5 +343,6 @@ function showError(error) {
   $('loading').hidden = false;
   $('loading').dataset.error = 'true';
   $('load-message').textContent = error.message || 'The model could not be opened. Please reload.';
+  if (parent !== window) parent.postMessage({ type: 'geodata:viewer-error' }, location.origin);
 }
 start().catch(showError);

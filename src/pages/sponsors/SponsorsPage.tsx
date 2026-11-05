@@ -1,91 +1,76 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
 import { AlumniPit } from './AlumniPit';
-import { RESIPLE, MANTI, H2, BODY, SUBPAGE, PILL, PILL_PRIMARY } from '../../styles/theme';
+import { RESIPLE, MANTI, H2, BODY, SUBPAGE, PILL, PILL_PRIMARY, CLOSE_ICON } from '../../styles/theme';
 import { SPONSOR_PACKET_PDF, TIERS, ALUMNI } from '../../data/content';
 
 // Keep the WebP page previews in sync with public/sponsorship/packet.pdf.
-const PACKET_PAGE_COUNT = 12;
+const PACKET_PAGE_COUNT = 5;
 const packetPageSrc = (n: number) => `/sponsorship/page-${String(n + 1).padStart(2, '0')}.webp`;
 
 function PacketViewer() {
   const [page, setPage] = useState(0);
-  // fixed-overlay "fullscreen" rather than the Fullscreen API - iPhones don't
-  // support requestFullscreen on elements, the overlay works everywhere
   const [full, setFull] = useState(false);
-  // fetch the next page ahead of the click so turning feels instant
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (page < PACKET_PAGE_COUNT - 1) new Image().src = packetPageSrc(page + 1);
   }, [page]);
-  // arrow keys page through while the sponsors page is up; Esc exits fullscreen
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') setPage((p) => Math.min(p + 1, PACKET_PAGE_COUNT - 1));
-      else if (e.key === 'ArrowLeft') setPage((p) => Math.max(p - 1, 0));
-      else if (e.key === 'Escape') setFull(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-  useEffect(() => {
-    document.body.style.overflow = full ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (!full) return;
+    dialogRef.current?.showModal();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
   }, [full]);
-  const arrowStyle = (enabled: boolean): React.CSSProperties => ({ padding: '7px 22px', border: 0, background: '#1a2430', color: enabled ? '#e6ecf0' : '#4d5b63', fontFamily: RESIPLE, fontWeight: 700, fontSize: 17, cursor: enabled ? 'pointer' : 'default', lineHeight: 1.2 });
-  const cornerBtn: React.CSSProperties = { padding: '5px 12px', fontFamily: RESIPLE, fontWeight: 700, fontSize: 11, boxShadow: '0 2px 10px rgba(0,0,0,0.45)', lineHeight: 1.4 };
-  const viewer = (
-    <div
-      style={full
-        ? { position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,20,28,0.98)', padding: 14 }
-        // inline: take whatever is left beside the text column and sit in
-        // the middle of it; on phones that is the full row
-        : { flex: '1 1 260px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-    >
-      <div style={{ position: 'relative', width: full ? undefined : 'min(70%, 320px)' }}>
-        {/* inline: the page fills the column width and its height follows the
-            aspect ratio, so there is never a letterbox; fullscreen: fit the
-            page inside the viewport both ways */}
-        <img key={page} src={packetPageSrc(page)} alt={`Sponsorship packet, page ${page + 1} of ${PACKET_PAGE_COUNT}`} style={full
-          ? { display: 'block', width: 'auto', height: 'auto', maxWidth: 'calc(100vw - 28px)', maxHeight: 'calc(100vh - 110px)', aspectRatio: '1400/1812', background: '#1a2430' }
-          : { display: 'block', width: '100%', height: 'auto', aspectRatio: '1400/1812', background: '#1a2430' }} />
-        <div style={{ position: 'absolute', right: 10, bottom: 10, display: 'flex', gap: 8 }}>
-          <button
-            type="button"
-            title={full ? 'Exit fullscreen (Esc)' : 'View fullscreen'}
-            onClick={() => setFull(!full)}
-            style={{ ...cornerBtn, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(14,20,28,0.75)', color: '#e6ecf0', cursor: 'pointer' }}
-          >
-            {full ? 'Exit' : 'Fullscreen'}
-          </button>
-        </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, paddingTop: 14 }}>
-        <button type="button" aria-label="Previous page" disabled={page === 0} onClick={() => setPage(page - 1)} style={arrowStyle(page > 0)}>←</button>
-        <span style={{ fontFamily: RESIPLE, fontSize: 12.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#a9bcc6', minWidth: '9ch', textAlign: 'center' }}>Page <span style={{ fontWeight: 700, color: '#e6ecf0' }}>{page + 1}</span> of <span style={{ fontWeight: 700, color: '#e6ecf0' }}>{PACKET_PAGE_COUNT}</span></span>
-        <button type="button" aria-label="Next page" disabled={page === PACKET_PAGE_COUNT - 1} onClick={() => setPage(page + 1)} style={arrowStyle(page < PACKET_PAGE_COUNT - 1)}>→</button>
-      </div>
+  const onKey = (event: React.KeyboardEvent) => {
+    if (event.key === 'ArrowRight') { event.preventDefault(); setPage((p) => Math.min(p + 1, PACKET_PAGE_COUNT - 1)); }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); setPage((p) => Math.max(p - 1, 0)); }
+  };
+  const controls = (
+    <div className="packet-controls">
+      <button type="button" aria-label="Previous page" disabled={page === 0} onClick={() => setPage(page - 1)}>←</button>
+      <span aria-live="polite">Page <strong>{page + 1}</strong> of {PACKET_PAGE_COUNT}</span>
+      <button type="button" aria-label="Next page" disabled={page === PACKET_PAGE_COUNT - 1} onClick={() => setPage(page + 1)}>→</button>
     </div>
   );
-  // portal escapes the sponsors section's z-index stacking context, which
-  // otherwise leaves the fixed site header painted over the overlay
-  return full ? createPortal(viewer, document.body) : viewer;
+  return (
+    <div className="packet-viewer" onKeyDown={onKey} style={{ flex: '1 1 260px', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <button ref={openerRef} type="button" className="packet-open" aria-label={`Enlarge sponsorship packet, page ${page + 1} of ${PACKET_PAGE_COUNT}`} aria-haspopup="dialog" onClick={() => setFull(true)}>
+        <img src={packetPageSrc(page)} alt="" />
+        <svg className="packet-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+      </button>
+      {controls}
+      {/* any click closes it except on the page arrows, including on the page itself and the X */}
+      <dialog ref={dialogRef} className="packet-dialog" aria-label="Sponsorship packet" onClose={() => { setFull(false); openerRef.current?.focus(); }} onClick={(event) => { if (!(event.target as Element).closest('.packet-controls')) dialogRef.current?.close(); }}>
+        {full && <>
+          <button type="button" className="close-x packet-close" aria-label="Close" autoFocus>{CLOSE_ICON}</button>
+          <img src={packetPageSrc(page)} alt={`2026–2027 sponsorship packet, page ${page + 1} of ${PACKET_PAGE_COUNT}`} className="packet-full-page" />
+          {controls}
+        </>}
+      </dialog>
+    </div>
+  );
 }
 
 function CopyEmailButton({ label }: { label: string }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   return (
     <button
       type="button"
-      aria-label={copied ? 'Copied cugeodata@cornell.edu' : label}
-      onClick={() => {
-        navigator.clipboard.writeText('cugeodata@cornell.edu');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+      aria-label={copied ? 'Copied cugeodata@cornell.edu' : copyFailed ? 'Copy unavailable. Email cugeodata@cornell.edu.' : label}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText('cugeodata@cornell.edu');
+          setCopied(true);
+          setCopyFailed(false);
+          setTimeout(() => setCopied(false), 2000);
+        } catch { setCopyFailed(true); }
       }}
       style={{ ...PILL_PRIMARY, padding: '13px 28px', fontSize: 17, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10 }}
     >
-      {label}
+      {copyFailed ? 'Copy unavailable' : label}
       {/* only mounted while copied, so the pill widens to make room for it */}
       {copied && (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ animation: 'check-pop 180ms ease-out' }}>
@@ -104,12 +89,12 @@ export function SponsorsPage() {
             right edge to the container's, so centering inside it splits the
             space evenly; the row gap only matters once the packet wraps */}
         <div className="sponsor-hero" style={{ display: 'flex', rowGap: 'clamp(48px,4vw,64px)', flexWrap: 'wrap', alignItems: 'center', minHeight: 'calc(100vh - 150px)' }}>
-          <div style={{ flex: '0 1 560px', minWidth: 300 }}>
+          <div style={{ flex: '0 1 560px', minWidth: 0 }}>
             <h2 style={H2}>Sponsorships &amp; Donations</h2>
-            <p style={{ ...BODY, maxWidth: 620, margin: '26px 0 0' }}>Students design and build every instrument we deploy. Sponsorships pay for parts and field deployments.</p>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 34 }}>
+            <p style={{ ...BODY, maxWidth: 620, margin: '26px 0 0' }}>Sponsorships help keep this team going so we can teach students and do important research. Financial sponsorships and donations of hardware or equipment are greatly appreciated and help us build, test, and deploy our projects.</p>
+            <div className="sponsor-actions" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 34 }}>
               <CopyEmailButton label="Copy our email" />
-              <a href={SPONSOR_PACKET_PDF} target="_blank" rel="noopener noreferrer" style={{ ...PILL, padding: '13px 28px', fontSize: 17 }}>Download the packet (PDF)</a>
+              <a href={SPONSOR_PACKET_PDF} download="Cornell-GeoData-Sponsorship-2026-2027.pdf" style={{ ...PILL, padding: '13px 28px', fontSize: 17 }}>Download the 2026–2027 packet (PDF)</a>
             </div>
           </div>
           {/* PACKET BOARD */}

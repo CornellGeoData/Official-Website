@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'node:path'
 
 const viewers = ['lidar', 'hexapod']
 
 export default defineConfig({
   plugins: [react(), {
+    // Dev prebundling keys deps by name, so all workspaces would share one copy
+    // of three and the home globe, pinned to r150, would run on a viewer's newer
+    // build and render washed out. Production builds already resolve per importer.
+    name: 'globe-pinned-three',
+    apply: 'serve',
+    enforce: 'pre',
+    resolveId(id, importer) {
+      if (id === 'three' && importer?.includes('/src/pages/home/')) return path.resolve('node_modules/three/build/three.module.js')
+    },
+  }, {
     name: 'viewer-entry-paths',
     // Keep the public viewer URLs independent of their source directories.
     configureServer(server) {

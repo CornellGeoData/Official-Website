@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { MapSite } from './sensorData';
 import { lonToX } from './mercator';
 import TileMap, { type MapTarget } from './TileMap';
+import { useCompactViewport } from './useCompactViewport';
 
 // The whole network fits in about 3.3 km. The map opens wide and eases in to
 // the whole network, so arriving lands on something you can read rather than
@@ -15,8 +16,8 @@ const LAND = { lat: 42.44742, lon: -76.46413 };
 
 // where the detached readings card parks: inset from the side, clear of the
 // title and the top-right controls
-const EDGE = 16;
-const CARD_TOP = 74;
+const EDGE = 12;
+const CARD_TOP = 68;
 
 export default function SensorMap({ sites, selectedIds, onSelect, cards }: {
   sites: MapSite[];
@@ -28,14 +29,15 @@ export default function SensorMap({ sites, selectedIds, onSelect, cards }: {
   const rootRef = useRef<HTMLDivElement>(null);
   const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
   // phones: the readings card docks as a bottom sheet instead of floating
-  const [isMobile] = useState(() => window.matchMedia('(max-width: 720px)').matches);
+  const isMobile = useCompactViewport();
   // a phone's narrow frame needs a wider landing to fit the whole network
-  const [target] = useState<MapTarget>(() => ({ lat: LAND.lat, lon: LAND.lon, zoom: isMobile ? MAP_NET_Z - 1 : MAP_NET_Z, nonce: 1 }));
+  const target = useMemo<MapTarget>(() => ({ lat: LAND.lat, lon: LAND.lon, zoom: isMobile ? MAP_NET_Z - 1.6 : MAP_NET_Z, nonce: isMobile ? 1 : 2 }), [isMobile]);
 
   return (
     // selection-proof: finger drags on the map must never start a text
     // selection or an iOS long-press callout
     <div ref={rootRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+      <style>{`@media (min-width: 600px) and (max-width:1100px) and (max-height:500px) { .sensor-card-dock { left:auto!important; right:12px!important; bottom:12px!important; width:min(420px,48vw); } .sensor-reading-card { max-height:calc(100dvh - 88px)!important; } }`}</style>
       <TileMap
         sites={sites}
         selectedIds={selectedIds}
@@ -51,7 +53,7 @@ export default function SensorMap({ sites, selectedIds, onSelect, cards }: {
           sensor docks as a full-width bottom sheet over the imagery. ---- */}
       {isMobile
         ? (cards?.length ? (
-            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 12 }}>
+            <div className="sensor-card-dock" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 12 }}>
               {cards[cards.length - 1].node}
             </div>
           ) : null)

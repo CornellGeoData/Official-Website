@@ -3,6 +3,7 @@ import { TILE, lonToX, latToY, xToLon, yToLat, type RasterTiles } from './mercat
 import { AIR, SOIL, WEATHER, type MapSite } from './sensorData';
 import { RESIPLE } from '../../styles/theme';
 import WeatherOverlay from './WeatherOverlay';
+import { useCompactViewport } from './useCompactViewport';
 
 // Esri World Imagery uses {z}/{y}/{x} tile order.
 const TILE_URL = (z: number, x: number, y: number) =>
@@ -20,8 +21,6 @@ export interface Overlay {
   opacity: number;
   tiles?: RasterTiles;
 }
-// phones get a compact legend; decided once, like every other mobile fork here
-const SMALL = window.matchMedia('(max-width: 720px)').matches;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const easeInOut = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
@@ -53,6 +52,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
   // the sensor legend only decodes pin families; a probe pin isn't one
   showLegend?: boolean;
 }) {
+  const small = useCompactViewport();
   const boxRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   // tiles fade in on arrival instead of popping; once seen, a tile stays
@@ -98,7 +98,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
     const t0 = performance.now();
     let raf = 0;
     const step = () => {
-      const k = easeInOut(Math.min(1, (performance.now() - t0) / dur));
+      const k = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : easeInOut(Math.min(1, (performance.now() - t0) / dur));
       setView({
         lat: from.lat + (target.lat - from.lat) * k,
         lon: from.lon + (target.lon - from.lon) * k,
@@ -117,12 +117,14 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
     if (!el) return;
     const pts = new Map<number, { x: number; y: number; sx: number; sy: number }>();
     let pinchSpan = 0;
+    let canPick = false;
     const span = () => {
       const [a, b] = [...pts.values()];
       return Math.hypot(a.x - b.x, a.y - b.y);
     };
     const down = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('button')) return;
+      if (e.button !== 0 || (e.target as HTMLElement).closest('button, select, a')) return;
+      canPick = pts.size === 0;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY });
       el.setPointerCapture(e.pointerId);
       if (pts.size === 2) pinchSpan = span();
@@ -131,6 +133,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
     const move = (e: PointerEvent) => {
       const p = pts.get(e.pointerId);
       if (!p) return;
+      if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) >= 6) canPick = false;
       const v = viewRef.current;
       if (pts.size >= 2) {
         p.x = e.clientX;
@@ -151,7 +154,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
     const up = (e: PointerEvent) => {
       const p = pts.get(e.pointerId);
       // a still finger (or mouse) that was the only pointer = a pick, not a pan
-      if (p && pts.size === 1 && Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 6 && onPickRef.current) {
+      if (e.type === 'pointerup' && canPick && p && pts.size === 1 && Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 6 && onPickRef.current) {
         const rect = el.getBoundingClientRect();
         const v = viewRef.current;
         const lon = xToLon(lonToX(v.lon, v.zoom) + (e.clientX - rect.left - rect.width / 2), v.zoom);
@@ -161,7 +164,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
       pts.delete(e.pointerId);
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
       if (pts.size < 2) pinchSpan = 0;
-      if (pts.size === 0) el.style.cursor = 'grab';
+      if (pts.size === 0) { el.style.cursor = 'grab'; canPick = false; }
     };
     // unlike the globe, the map owns a plain wheel too: the imagery fills the
     // page, so scrolling reads as zoom, not as leaving
@@ -239,7 +242,17 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
   return (
     // touchAction none: the map fills a page that never scrolls, so every
     // finger gesture belongs to pan/pinch, not the browser
-    <div ref={boxRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', cursor: 'grab', background: '#0e141c', touchAction: 'none' }}>
+    <div ref={boxRef} tabIndex={0} role="region" aria-label="Interactive map. Use arrow keys to pan, plus and minus to zoom, and Enter to inspect the center."
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        const v = viewRef.current;
+        if (e.key === '+' || e.key === '=' || e.key === '-') {
+          e.preventDefault(); setView({ ...v, zoom: clamp(v.zoom + (e.key === '-' ? -1 : 1), minZ, maxZ) });
+        } else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+          e.preventDefault();
+          setView({ ...v, lon: xToLon(lonToX(v.lon, v.zoom) + (e.key === 'ArrowRight' ? 80 : e.key === 'ArrowLeft' ? -80 : 0), v.zoom), lat: yToLat(latToY(v.lat, v.zoom) + (e.key === 'ArrowDown' ? 80 : e.key === 'ArrowUp' ? -80 : 0), v.zoom) });
+        } else if (e.key === 'Enter' && onPick) { e.preventDefault(); onPick(v.lat, v.lon); }
+      }} style={{ position: 'absolute', inset: 0, overflow: 'hidden', cursor: 'grab', background: '#0e141c', touchAction: 'none' }}>
       {/* the parent level sits underneath so a zoom step never shows through to
           nothing while the finer tiles are still arriving */}
       {Z > minZ && layer(Z - 1)}
@@ -251,7 +264,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
           per family, hollow for retired, no names printed on the map. The
           name fades in on hover and stays while selected; the legend below
           decodes the colors. */}
-      <style>{'.pin-label{opacity:0;transition:opacity .15s ease}button:hover>.pin-label{opacity:1}'}</style>
+      <style>{'.pin-label{opacity:0;transition:opacity .15s ease}button:hover>.pin-label,button:focus-visible>.pin-label{opacity:1}'}</style>
       {sites.map((s) => {
         const p = screen(s);
         if (!w || p.x < -80 || p.y < -40 || p.x > w + 80 || p.y > h + 40) return null;
@@ -261,15 +274,14 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
             key={s.id}
             onClick={() => onSelect(s.id)}
             aria-label={`${s.name} - ${s.sub}`}
+            aria-pressed={on}
             style={{
-              position: 'absolute', left: p.x, top: p.y, width: 0, height: 0, overflow: 'visible',
+              position: 'absolute', left: p.x - 22, top: p.y - 22, width: 44, height: 44, overflow: 'visible',
               appearance: 'none', cursor: 'pointer', background: 'transparent', border: 'none', padding: 0,
             }}
           >
-            {/* invisible 34px halo: finger-sized tap target, visual unchanged */}
-            <span style={{ position: 'absolute', left: -17, top: -17, width: 34, height: 34, borderRadius: 999 }} />
             <span style={{
-              position: 'absolute', left: -8, top: -8, width: 16, height: 16, borderRadius: 999,
+              position: 'absolute', left: 14, top: 14, width: 16, height: 16, borderRadius: 999,
               background: s.retired ? 'transparent' : s.tone,
               border: s.retired ? `2px solid ${s.tone}` : '2px solid rgba(14,20,28,0.9)',
               // retired rings are hollow, so they get a dark line on both faces
@@ -280,7 +292,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
               transition: 'box-shadow .18s',
             }} />
             <span className="pin-label" style={{
-              position: 'absolute', left: 0, top: s.labelBelow ? 14 : -32, transform: 'translateX(-50%)', whiteSpace: 'nowrap',
+              position: 'absolute', left: 22, top: s.labelBelow ? 36 : -10, transform: 'translateX(-50%)', whiteSpace: 'nowrap',
               fontFamily: RESIPLE, fontSize: 12.5, letterSpacing: '0.1em', textTransform: 'uppercase',
               color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.6)',
               opacity: on ? 1 : undefined, pointerEvents: 'none',
@@ -295,8 +307,8 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
           raised there so the attribution line below never runs through it.
           No sites (Forecast View) = nothing to decode = no legend. */}
       {(showLegend ?? true) && sites.length > 0 && <div style={{
-        position: 'absolute', left: 14, bottom: SMALL ? 22 : 12, display: 'flex', flexWrap: 'wrap', gap: SMALL ? '4px 10px' : '6px 18px', alignItems: 'center', maxWidth: 'calc(100% - 28px)',
-        padding: SMALL ? '5px 9px' : '8px 14px', background: 'rgba(14,20,28,0.72)', backdropFilter: 'blur(6px)',
+        position: 'absolute', left: 'max(12px, env(safe-area-inset-left))', bottom: small ? 'max(26px, calc(env(safe-area-inset-bottom) + 14px))' : 12, display: 'flex', flexWrap: 'wrap', gap: small ? '4px 10px' : '6px 18px', alignItems: 'center', maxWidth: 'calc(100% - 28px)',
+        padding: small ? '5px 9px' : '8px 14px', background: 'rgba(14,20,28,0.72)', backdropFilter: 'blur(6px)',
         border: '1px solid #ffffff', pointerEvents: 'none',
       }}>
         {([
@@ -307,9 +319,9 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
           // to any sensor family, not one tone
           ['#ffffff', 'Inactive', true],
         ] as const).map(([tone, name, ring]) => (
-          <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: SMALL ? 5 : 7, fontFamily: RESIPLE, fontSize: SMALL ? 9.5 : 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ffffff' }}>
+          <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: small ? 5 : 7, fontFamily: RESIPLE, fontSize: small ? 9.5 : 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#ffffff' }}>
             <span style={{
-              width: SMALL ? 8 : 10, height: SMALL ? 8 : 10, borderRadius: 999, boxSizing: 'border-box',
+              width: small ? 8 : 10, height: small ? 8 : 10, borderRadius: 999, boxSizing: 'border-box',
               background: ring ? 'transparent' : tone,
               border: ring ? `1.5px solid ${tone}` : '1px solid rgba(14,20,28,0.9)',
               boxShadow: ring ? 'inset 0 0 0 1px rgba(14,20,28,0.9), 0 0 0 1px rgba(14,20,28,0.9)' : undefined,
@@ -321,7 +333,7 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
 
       {/* phones: the bottom edge belongs to the legend and the card sheet, so
           the credit line rides the top-left instead */}
-      {attribution && <span style={{ position: 'absolute', ...(SMALL ? { left: 6, top: 4 } : { right: 12, bottom: 12 }), fontFamily: RESIPLE, fontSize: SMALL ? 8.5 : 10.5, color: 'rgba(230,236,240,0.75)', textShadow: '0 1px 3px rgba(0,0,0,0.9)', pointerEvents: 'none' }}>
+      {attribution && <span className="map-credit" style={{ position: 'absolute', ...(small ? (showLegend !== false && sites.length ? { left: 12, bottom: 'max(6px, env(safe-area-inset-bottom))' } : { left: 6, top: 4 }) : { right: 12, bottom: 12 }), fontFamily: RESIPLE, fontSize: small ? 8.5 : 10.5, color: 'rgba(230,236,240,0.75)', textShadow: '0 1px 3px rgba(0,0,0,0.9)', pointerEvents: 'none' }}>
         {attribution}
       </span>}
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import TileMap, { type MapTarget, type Overlay } from './TileMap';
 import { RESIPLE } from '../../styles/theme';
 import { PANEL, ColorScale } from './wxUi';
+import { useCompactViewport } from './useCompactViewport';
 import { loadImage } from './wxClient';
 import {
   fetchCatalog, fetchMatrix, panelUrl, panelError, sameSelection,
@@ -13,7 +14,6 @@ const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
 const LIGHT_TILES = (z: number, x: number, y: number) =>
   `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`;
 
-const INITIAL_SMALL = window.matchMedia('(max-width: 720px)').matches;
 const HOUR = 3_600_000;
 const SIX = 6 * HOUR;
 const LOCAL_TZ = 'America/New_York';
@@ -36,16 +36,25 @@ const fmtInit = (ms: number) =>
 const fmtDay = (ms: number) =>
   new Date(ms).toLocaleDateString([], { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric' });
 
+const dateValue = (ms: number) => {
+  const { y, m, d } = nyParts(ms);
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+};
+
+// Preserve the Ithaca hour when the selected day crosses a daylight-saving change.
+function onDay(value: number, day: string) {
+  const { y, m, d, h } = nyParts(value);
+  const desired = Date.parse(`${day}T00:00:00Z`) + h * HOUR;
+  let result = value + desired - Date.UTC(y, m, d, h);
+  const local = nyParts(result);
+  result += desired - Date.UTC(local.y, local.m, local.d, local.h);
+  return result;
+}
+
 const initOf = (s: Selection) => (s as { init: number }).init;
 
 export default function WeatherVerify() {
-  const [small, setSmall] = useState(INITIAL_SMALL);
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 720px)');
-    const resize = () => setSmall(media.matches);
-    media.addEventListener('change', resize);
-    return () => media.removeEventListener('change', resize);
-  }, []);
+  const small = useCompactViewport();
 
   const [catalog, setCatalog] = useState<VerifyCatalog | 'loading' | 'error'>('loading');
   // imperial by default - the club is in New York. The ramp is baked into the
@@ -215,11 +224,11 @@ export default function WeatherVerify() {
     setValid(Math.min(Math.max(valid + h * HOUR, bounds.min), bounds.max));
 
   const status = catalog === 'error'
-    ? 'The verification service is unreachable. Run node server.mjs alongside the dev server.'
+    ? 'The weather archive is temporarily unavailable. Please try again later.'
     : error ?? (url && !ready ? 'Reading the archive. The first panel of a run takes a few seconds.' : null);
 
   return (
-    <div className="wxview" style={{ position: 'absolute', inset: 0, background: '#e8e8e6', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+    <div className={`wxview${small ? ' wxv-compact' : ''}`} style={{ position: 'absolute', inset: 0, background: '#e8e8e6', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
       <style>{`
         .wxview button { -webkit-tap-highlight-color: transparent; font-family: ${RESIPLE}; }
         .wxview ::-webkit-scrollbar { display: none }
@@ -244,6 +253,24 @@ export default function WeatherVerify() {
         .wxv-range::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #fff; }
         .wxv-tick { appearance: none; border: 0; background: transparent; padding: 2px 3px; font-size: 10.5px; color: ${DIM}; cursor: pointer; white-space: nowrap; }
         .wxv-tick[aria-pressed="true"] { color: #fff; font-weight: 600; }
+        .wxview :is(button,select,input):focus-visible { outline: 2px solid #e6ecf0; outline-offset: 3px; }
+        .wxv-native { display: block; width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; border: 1px solid #617581; border-radius: 0; padding: 6px; background: #101720; color: ${INK}; font: 16px ${RESIPLE}; color-scheme: dark; }
+        .wxv-mobile-label { min-width: 0; display: grid; gap: 4px; font-size: 11px; color: ${DIM}; }
+        .wxv-compact .wxv-range { height: 44px; }
+        .wxv-compact .wxv-range::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10.5px; }
+        .wxv-compact .wxv-range::-moz-range-thumb { width: 24px; height: 24px; }
+        .wxv-top { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(0,1fr); gap: 8px; }
+        .wxv-mobile-controls { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 8px; }
+        @media(min-width:721px) and (max-width:919px) { .wxv-storms { bottom: 66px !important; } }
+        @media(max-width:380px) { .wxv-top { grid-template-columns: minmax(0,1fr); } }
+        @media(max-width:340px) { .wxv-mobile-controls { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+        @media(min-width:480px) and (max-height:500px) {
+          .wxv-mobile-controls { grid-template-columns: minmax(0,1.3fr) repeat(3,minmax(0,1fr)); }
+          .wxv-mobile-label { gap: 0; }
+          .wxv-mobile-label>span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+          .wxv-compact .wxv-lead { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding-top:4px!important; }
+          .wxv-compact .wxv-legend { top:70px!important; transform:none!important; }
+        }
       `}</style>
       <TileMap
         sites={[]}
@@ -261,8 +288,21 @@ export default function WeatherVerify() {
       />
 
       {/* top-left: the variable */}
-      {cat && field && (
-        <div data-pop style={{ position: 'absolute', top: small ? 16 : 24, left: small ? 12 : 24, zIndex: 6 }}>
+      {small && cat && field && (
+        <div className="wxv-top" style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', left: 'max(12px, env(safe-area-inset-left))', right: 'calc(max(12px, env(safe-area-inset-right)) + 56px)', maxWidth: 460, zIndex: 6 }}>
+          <select className="wxv-native" aria-label="Weather variable" value={field.id} onChange={(e) => setFieldId(e.target.value)}>
+            {cat.fields.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+          </select>
+          <select className="wxv-native" aria-label="Past storms" value={activeEvent?.id ?? ''} onChange={(e) => { const event = WX_EVENTS.find((event) => event.id === e.target.value); if (event) goToEvent(event); }}>
+            <option value="">Past storms</option>
+            {EVENT_KINDS.map((kind) => <optgroup key={kind.id} label={kind.label}>
+              {WX_EVENTS.filter((event) => event.kind === kind.id).map((event) => <option key={event.id} value={event.id}>{event.label}, {fmtDay(Date.parse(event.valid))}</option>)}
+            </optgroup>)}
+          </select>
+        </div>
+      )}
+      {!small && cat && field && (
+        <div data-pop style={{ position: 'absolute', top: 'max(12px, env(safe-area-inset-top))', left: 'max(12px, env(safe-area-inset-left))', zIndex: 6 }}>
           <button className="wxv-q" onClick={() => toggle('field')} aria-expanded={open === 'field'} style={TRIGGER}>
             {field.label} <Caret up={open === 'field'} />
           </button>
@@ -276,11 +316,10 @@ export default function WeatherVerify() {
         </div>
       )}
 
-      {/* bottom-left: a way into past storms. Desktop only: on a phone the
-          bottom bar takes the width and there is no room beside it */}
+      {/* Phones use the native Past storms picker beside the variable. */}
       {!small && (
-        <div data-pop style={{ position: 'absolute', bottom: 24, left: 24, zIndex: 6 }}>
-          <button className="wxv-q" onClick={() => toggle('events')} aria-expanded={open === 'events'} style={{ ...TRIGGER, height: 32 }}>
+        <div data-pop className="wxv-storms" style={{ position: 'absolute', bottom: 'max(12px, env(safe-area-inset-bottom))', left: 'max(12px, env(safe-area-inset-left))', zIndex: 6 }}>
+          <button className="wxv-q" onClick={() => toggle('events')} aria-expanded={open === 'events'} style={TRIGGER}>
             Past storms <Caret up={open === 'events'} />
           </button>
           {open === 'events' && (
@@ -306,14 +345,46 @@ export default function WeatherVerify() {
       )}
 
       {field?.scale && (
-        <div style={{ position: 'absolute', right: small ? 14 : 26, top: '44%', transform: 'translateY(-50%)', zIndex: 4, pointerEvents: 'none' }}>
+        <div className="wxv-legend" style={{ position: 'absolute', right: 'max(12px, env(safe-area-inset-right))', top: small ? '40%' : '44%', transform: 'translateY(-50%)', zIndex: 4, pointerEvents: 'none' }}>
           <ColorScale small={small} scale={field.scale} />
         </div>
       )}
 
       {/* bottom: date, hour and source on one line; lead slider only for a model */}
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: small ? 14 : 24, zIndex: 4, ...PANEL, background: 'rgba(14,20,28,0.94)', width: 'min(620px, calc(100vw - 20px))', boxSizing: 'border-box', padding: '8px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 14, rowGap: 6 }}>
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 'max(12px, env(safe-area-inset-bottom))', zIndex: 4, ...PANEL, background: 'rgba(14,20,28,0.94)', width: 'min(620px, calc(100% - max(24px, env(safe-area-inset-left) + env(safe-area-inset-right))))', boxSizing: 'border-box', padding: '8px 12px', maxHeight: 'calc(100dvh - 88px)', overflowY: small ? 'auto' : undefined }}>
+        {small ? (
+          <div className="wxv-mobile-controls">
+            <label className="wxv-mobile-label"><span>Date (Ithaca time)</span>
+              <input className="wxv-native" type="date" value={valid !== null ? dateValue(valid) : ''} min={bounds ? dateValue(bounds.min) : undefined} max={bounds ? dateValue(bounds.max) : undefined} disabled={!bounds || valid === null}
+                onChange={(e) => { if (e.target.value && bounds && valid !== null) setValid(Math.min(bounds.max, Math.max(bounds.min, onDay(valid, e.target.value)))); }} />
+            </label>
+            <label className="wxv-mobile-label"><span>Hour (Ithaca time)</span>
+              <select className="wxv-native" value={valid ?? ''} disabled={!bounds || valid === null} onChange={(e) => setValid(Number(e.target.value))}>
+                {valid !== null && bounds && Array.from({ length: 24 }, (_, k) => valid + (k - localHour) * HOUR).map((ms) => <option key={ms} value={ms} disabled={ms < bounds.min || ms > bounds.max}>{fmtHour(ms)} ({zulu(ms)})</option>)}
+              </select>
+            </label>
+            <label className="wxv-mobile-label"><span>Source</span>
+              <select className="wxv-native" value={sel.source} disabled={!matrix} onChange={(e) => {
+                const source = e.target.value;
+                if (source === 'obs') setSel({ source });
+                else if (matrix?.rows.find((row) => row.model === source)?.cells.some(Boolean)) pickModel(source);
+                else snapTo(source);
+              }}>
+                <option value="obs" disabled={!matrix?.truth.available}>Observed</option>
+                {matrix?.rows.map((row) => {
+                  const model = field?.models.find((model) => model.id === row.model);
+                  const available = row.cells.some(Boolean) || (!!model && model.leadStepHours > 1 && valid !== null && valid >= model.firstInit);
+                  return <option key={row.model} value={row.model} disabled={!available}>{row.label}</option>;
+                })}
+              </select>
+            </label>
+            <label className="wxv-mobile-label"><span>Units</span>
+              <select className="wxv-native" value={units} onChange={(e) => setUnits(e.target.value as UnitSystem)}>
+                <option value="imperial">°F / in</option><option value="metric">°C / mm</option>
+              </select>
+            </label>
+          </div>
+        ) : <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 14, rowGap: 6 }}>
           <div style={{ display: 'flex', gap: 6 }}>
             <div data-pop style={BOX}>
               <button className="wxv-q" onClick={() => shift(-24)} disabled={!bounds || valid === bounds.min} aria-label="Previous day" style={ARROW}>&lsaquo;</button>
@@ -394,10 +465,10 @@ export default function WeatherVerify() {
               >{u === 'imperial' ? '°F' : '°C'}</button>
             ))}
           </div>
-        </div>
+        </div>}
 
         {activeRow && activeCell && (
-          <div style={{ padding: '10px 6px 0' }}>
+          <div className="wxv-lead" style={{ padding: '10px 6px 0' }}>
             <input
               type="range"
               className="wxv-range"
@@ -409,7 +480,7 @@ export default function WeatherVerify() {
               aria-label="Forecast lead time"
               aria-valuetext={`${activeCell.leadHours} hours ahead, run ${fmtInit(activeCell.init)}`}
             />
-            <div style={{ position: 'relative', height: 16, marginTop: 4 }}>
+            {small ? <div style={{ fontSize: 12, color: DIM }}>+{activeCell.leadHours} hours, run {fmtInit(activeCell.init)}</div> : <div style={{ position: 'relative', height: 16, marginTop: 4 }}>
               {leads.map((c, i) => (
                 <button
                   key={c.init}
@@ -420,7 +491,7 @@ export default function WeatherVerify() {
                   style={{ position: 'absolute', left: `calc(6px + (100% - 12px) * ${leads.length > 1 ? i / (leads.length - 1) : 0})`, transform: 'translateX(-50%)' }}
                 >+{c.leadHours}h</button>
               ))}
-            </div>
+            </div>}
           </div>
         )}
 
@@ -433,13 +504,13 @@ export default function WeatherVerify() {
 }
 
 const POP: React.CSSProperties = { ...PANEL, background: 'rgba(14,20,28,0.96)', position: 'absolute', zIndex: 8, padding: '6px 0' };
-const TRIGGER: React.CSSProperties = { ...PANEL, height: 34, padding: '0 12px', fontSize: 12, letterSpacing: '0.03em', color: INK, display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' };
+const TRIGGER: React.CSSProperties = { ...PANEL, background: '#141c26', border: '1px solid rgba(255,255,255,.5)', height: 44, padding: '0 10px', fontSize: 16, color: INK, display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' };
 const BOX: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', height: 28 };
 const BOX_LABEL: React.CSSProperties = { height: '100%', padding: '0 4px', color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap' };
 const ARROW: React.CSSProperties = { width: 22, height: '100%', fontSize: 16, color: '#fff' };
 
 function Caret({ up }: { up: boolean }) {
-  return <span aria-hidden="true" style={{ fontSize: 9, color: DIM }}>{up ? '\u25b4' : '\u25be'}</span>;
+  return <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: up ? 'rotate(180deg)' : undefined }}><path d="M2 4.2 6 8.2l4-4" /></svg>;
 }
 
 /** Month grid in Ithaca time. Picking a day keeps the hour on screen. */
@@ -486,8 +557,7 @@ function Calendar({ value, min, max, onPick }: { value: number; min: number; max
               className="wxv-day"
               aria-pressed={k === curK}
               disabled={k < loK || k > hiK}
-              // ponytail: whole-day step ignores DST, so a pick across a clock change lands an hour off
-              onClick={() => onPick(value + (k - curK))}
+              onClick={() => onPick(onDay(value, new Date(k).toISOString().slice(0, 10)))}
             >{i + 1}</button>
           );
         })}

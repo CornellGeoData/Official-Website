@@ -9,6 +9,7 @@ import ConstantSizeSphere from '@giro3d/giro3d/renderer/ConstantSizeSphere.js';
 import { setLazPerfPath } from '@giro3d/giro3d/sources/las/config.js';
 import proj4 from 'proj4';
 import { createRangeGetter } from './range.js';
+import { onTap } from './tap.js';
 
 const $ = (id) => document.getElementById(id);
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 });
@@ -19,8 +20,18 @@ const classes = [
   { code: 9, name: 'Water', color: '#009dff' },
   { code: 17, name: 'Bridge decks', color: '#db42f5' },
 ];
-const small = matchMedia('(max-width: 720px)').matches;
-if (small) document.querySelector('.classes-panel').open = false;
+const compactScreen = matchMedia('(max-width: 720px), (pointer: coarse), (max-width: 1100px) and (max-height: 500px)');
+const small = compactScreen.matches;
+if (small) {
+  $('controls').open = false;
+  document.querySelector('.classes-panel').open = false;
+}
+const orbitHint = () => compactScreen.matches ? 'One finger rotates · pinch to zoom · two fingers pan. Tap a point to inspect.' : 'Click a point to inspect. Drag to orbit, scroll to zoom, right-drag to pan.';
+function updateHint() {
+  $('hint').textContent = orbitHint();
+  $('view').setAttribute('aria-label', `Interactive Ithaca LiDAR scan. ${orbitHint()} Arrow keys pan; Enter selects the center point.`);
+}
+updateHint();
 setLazPerfPath('/lidar/wasm');
 GlobalCache.configure({ byteCapacity: (small ? 96 : 256) * 1024 * 1024 });
 
@@ -38,6 +49,7 @@ async function start() {
   await source.initialize();
   const metadata = await source.getMetadata();
   const instance = new Instance({ target: 'view', crs: metadata.crs, backgroundColor: '#0e141c' });
+  instance.renderer.domElement.addEventListener('webglcontextlost', () => reportError(new Error('The 3D view was interrupted. Reload to try again.')));
   // Giro3D's depth-shading targets use CSS pixels; keep the canvas at the same scale.
   instance.renderer.setPixelRatio(1);
   instance.renderingOptions.enableEDL = true;
@@ -97,7 +109,6 @@ async function start() {
   selectedPoint.renderOrder = 1001;
   selectedPoint.visible = false;
   await instance.add(selectedPoint);
-  const orbitHint = 'Click a point to inspect. Drag to orbit, scroll to zoom, right-drag to pan.';
   let pickingAnchor = false;
 
   function clearPoint() {
@@ -110,7 +121,8 @@ async function start() {
     $('anchor').classList.toggle('selected', enabled);
     $('anchor').setAttribute('aria-pressed', String(enabled));
     instance.domElement.style.cursor = enabled ? 'crosshair' : '';
-    $('hint').textContent = enabled ? 'Select a point as the orbit anchor. Press Esc to cancel.' : orbitHint;
+    $('hint').textContent = enabled ? 'Tap a point to set the orbit center. Open controls and tap the anchor again to cancel.' : orbitHint();
+    if (enabled && compactScreen.matches) $('controls').open = false;
   }
   function selectPoint(position) {
     const [hit] = instance.pickObjectsAt(position, { where: [cloud], radius: 4, limit: 1, gpuPicking: true });
@@ -144,18 +156,7 @@ async function start() {
     $('point-details').append(name, coordinates);
     $('point-info').hidden = false;
   }
-  let pointerStart;
-  instance.domElement.addEventListener('pointerdown', event => {
-    pointerStart = event.isPrimary && event.button === 0 ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null;
-  });
-  instance.domElement.addEventListener('pointermove', event => {
-    if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 5) pointerStart = null;
-  });
-  instance.domElement.addEventListener('pointerup', event => {
-    if (pointerStart?.id === event.pointerId) selectPoint(event);
-    pointerStart = null;
-  });
-  instance.domElement.addEventListener('pointercancel', () => { pointerStart = null; });
+  onTap(instance.domElement, selectPoint);
   $('view').addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -197,11 +198,25 @@ async function start() {
   for (const button of document.querySelectorAll('[data-view]')) {
     button.onclick = () => overview(button.dataset.view);
   }
-  $('quality').onchange = (event) => {
-    cloud.pointBudget = Number(event.target.value);
+  let qualityChosen = false;
+  function setQuality(budget) {
+    cloud.pointBudget = budget;
+    $('quality').value = String(budget);
     cloud.subdivisionThreshold = cloud.pointBudget > 3_000_000 ? 0.8 : cloud.pointBudget < 1_000_000 ? 2.5 : 1;
     instance.notifyChange(cloud);
+  }
+  $('quality').onchange = (event) => {
+    qualityChosen = true;
+    setQuality(Number(event.target.value));
   };
+  compactScreen.addEventListener('change', () => {
+    const previousHint = $('hint').textContent;
+    updateHint();
+    if (pickingAnchor) $('hint').textContent = previousHint;
+    if (compactScreen.matches) $('controls').open = false;
+    GlobalCache.configure({ byteCapacity: (compactScreen.matches ? 96 : 256) * 1024 * 1024 });
+    if (!qualityChosen) setQuality(compactScreen.matches ? 750_000 : 2_500_000);
+  });
   $('point-size').oninput = (event) => { cloud.pointSize = Number(event.target.value); instance.notifyChange(cloud); };
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') { setAnchorMode(false); clearPoint(); }
@@ -218,9 +233,11 @@ async function start() {
   overview();
 }
 
-start().catch((error) => {
+function reportError(error) {
   console.error(error);
   $('loading').hidden = false;
   $('load-message').textContent = `The scan could not open. ${error.message} Reload to try again.`;
   document.querySelector('.pulse').hidden = true;
-});
+  if (parent !== window) parent.postMessage({ type: 'geodata:viewer-error' }, location.origin);
+}
+start().catch(reportError);

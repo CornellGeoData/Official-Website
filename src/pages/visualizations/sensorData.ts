@@ -211,25 +211,24 @@ export const EGGS = [
 ];
 
 // Zynect Soilmotes ride the same Wicked Device API as the eggs, but the grouped
-// feed is keyed by internal serial (the portal name, e.g. GRASP, is an alias).
+// feed is keyed by internal serial (the portal name, e.g. CENSE, is an alias).
 // That API needs no key and allows any origin, so the client fetches it directly.
 export const SOILMOTES = [
-  { id: 'egge82d1055169daf2b', name: 'GRASP', location: 'Gamefarm', lifeFrom: Date.parse('2025-05-14T00:00:00Z'), coords: "N 42\u00b0 27.060' W 76\u00b0 26.863'" },
+  // labelBelow: sits under GLITZ/CAMPS, so its name drops beneath the dot
+  { id: 'eggba7714fb1f826a6a', name: 'CENSE', location: 'Gamefarm', lifeFrom: Date.parse('2025-03-18T00:00:00Z'), coords: "N 42\u00b0 26.924' W 76\u00b0 26.812'", labelBelow: true },
+  { id: 'egg6489edb8c8318336', name: 'NINJA', location: 'Gamefarm', lifeFrom: Date.parse('2026-03-21T00:00:00Z'), coords: "N 42\u00b0 26.926' W 76\u00b0 26.757'" },
 ];
 
 // retired probes: their history never changes, so it's cataloged once into
 // soil-archive.json (thinned to ~900 pts each) instead of refetched from the
-// slow archive API. NINJA's range set by the team; the rest are as probed.
+// slow archive API. A probe that comes back moves to SOILMOTES and out of the archive.
 export const ARCHIVE: Record<string, SensorPoint[]> = Object.fromEntries(
   // a 0% reading means the probe wasn't reading, not dry soil - drop them
   Object.entries(soilArchive as unknown as Record<string, [number, number][]>).map(([k, v]) => [k, v.map(([t, x]) => ({ t, v: x })).filter((p) => p.v !== 0)]),
 );
 
 export const RETIRED = [
-  // labelBelow: these two sit under GLITZ/CAMPS, so their names drop beneath
-  // the dot instead of landing on a neighbor
-  { coords: "N 42\u00b0 26.924' W 76\u00b0 26.812'", name: 'CENSE', from: '3/18/25', to: '6/18/26', labelBelow: true },
-  { coords: "N 42\u00b0 26.926' W 76\u00b0 26.757'", name: 'NINJA', from: '3/21/26', to: '6/3/26' },
+  { coords: "N 42\u00b0 27.060' W 76\u00b0 26.863'", name: 'GRASP', from: '5/14/25', to: '8/29/26' },
   { coords: "N 42\u00b0 27.032' W 76\u00b0 26.729'", name: 'CAMPS', from: '4/18/25', to: '4/19/26' },
   { coords: "N 42\u00b0 26.949' W 76\u00b0 26.816'", name: 'GLITZ', from: '3/18/25', to: '4/13/26' },
 ];

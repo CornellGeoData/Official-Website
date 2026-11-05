@@ -1,6 +1,7 @@
 import { RESIPLE, MANTI, H2, SUBPAGE, fmtTag } from '../styles/theme';
 import { POSTS } from '../data/posts';
-import type { Post } from '../data/posts';
+import type { Post, PostMedia } from '../data/posts';
+import { LoopVideo } from './LoopVideo';
 
 // renders **text** in post paragraphs as bold
 const emphasize = (text: string) =>
@@ -8,7 +9,7 @@ const emphasize = (text: string) =>
 
 export function PostPage({ post }: { post: Post }) {
   // group consecutive paragraphs so each run gets one card while images sit outside on the page
-  const postChunks: (string[] | { img: string; max?: number })[] = [];
+  const postChunks: (string[] | PostMedia)[] = [];
   for (const para of post.body) {
     const last = postChunks[postChunks.length - 1];
     if (typeof para === 'string' && Array.isArray(last)) last.push(para);
@@ -16,8 +17,7 @@ export function PostPage({ post }: { post: Post }) {
   }
   return (
     // tighter top padding than the stock subpage on phones: the header is only
-    // ~60px there (and the recruiting banner hides inside posts), so 150px
-    // read as dead space above the All posts link
+    // ~60px there, so 150px read as dead space above the All posts link
     <section style={{ ...SUBPAGE, paddingTop: 'clamp(84px, 19vw, 150px)' }}>
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
         <a href="#/posts" style={{ fontFamily: RESIPLE, fontSize: 14.5 }}>← All posts</a>
@@ -41,7 +41,11 @@ export function PostPage({ post }: { post: Post }) {
             </div>
           ) : (
             <div key={i} className="team-photo-frame" style={{ padding: 14, border: `2px solid ${post.tagColor}`, maxWidth: chunk.max ?? 640, margin: `${i === 0 ? 56 : 48}px auto 0` }}>
-              <img loading="lazy" decoding="async" src={chunk.img} alt="" style={{ display: 'block', width: '100%', height: 'auto' }} />
+              {'video' in chunk ? (
+                <LoopVideo src={chunk.video} poster={chunk.poster} label={chunk.alt} style={{ height: 'auto' }} />
+              ) : (
+                <img loading="lazy" decoding="async" src={chunk.img} alt={chunk.alt ?? ''} style={{ display: 'block', width: '100%', height: 'auto' }} />
+              )}
             </div>
           )
         ))}
@@ -69,7 +73,7 @@ export function PostPage({ post }: { post: Post }) {
 
 export function PostsPage({ filter, onFilter }: { filter: 'all' | 'project' | 'blog'; onFilter: (f: 'all' | 'project' | 'blog') => void }) {
   return (
-    <section style={SUBPAGE}>
+    <section className="posts-page" style={SUBPAGE}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
         <h2 style={H2}>Posts</h2>
         <div style={{ display: 'flex', gap: 26, marginTop: 36 }}>
@@ -86,8 +90,8 @@ export function PostsPage({ filter, onFilter }: { filter: 'all' | 'project' | 'b
         </div>
         <div style={{ marginTop: 48 }}>
           {POSTS.filter((post) => filter === 'all' || post.kind === filter).map((post, i) => (
-            <article key={post.slug} style={i === 0 ? undefined : { marginTop: 72 }}>
-              <a href={`#/posts/${post.slug}`} className="post-link post-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) clamp(130px,30vw,300px)', gap: 'clamp(18px,3.5vw,44px)', alignItems: 'center' }}>
+            <article key={post.slug} style={{ margin: `${i === 0 ? 0 : 48}px -12px 0` }}>
+              <a href={`#/posts/${post.slug}`} className="highlight-row post-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) clamp(130px,30vw,300px)', gap: 'clamp(18px,3.5vw,44px)', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontFamily: RESIPLE, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7c909b' }}>
                     {post.date} <span style={{ color: post.tagColor }}>{fmtTag(post.tag)}</span>
@@ -95,7 +99,7 @@ export function PostsPage({ filter, onFilter }: { filter: 'all' | 'project' | 'b
                   <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(24px,3.2vw,34px)', letterSpacing: '-0.015em', lineHeight: 1.12, margin: '14px 0 0' }}>{post.title}</h3>
                   <p style={{ fontSize: 16, lineHeight: 1.6, color: '#a9bcc6', margin: '14px 0 0' }}>{post.dek}</p>
                 </div>
-                <div style={{ padding: 10, border: `2px solid ${post.tagColor}` }}>
+                <div>
                   {post.photo ? (
                     <img loading="lazy" decoding="async" src={post.photo} alt="" style={{ display: 'block', width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
                   ) : (

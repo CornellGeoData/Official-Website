@@ -1,0 +1,20 @@
+{
+  "description": "Static Air artwork: WindNinja mass conservation with the full spatial HRRR field.",
+  "validTime": "2026-11-05T03:00:00Z",
+  "model": "NOAA NWS / NCEP HRRR analysis via dynamical.org",
+  "modelGridMeters": 3000,
+  "solver": "WindNinja 4.0.0 mass conservation; griddedInitialization",
+  "terrain": "USGS 3DEP",
+  "meshMeters": 250,
+  "windHeightMeters": 10,
+  "units": "m/s",
+  "crs": "EPSG:26918",
+  "components": "Projected east/north, from the tested mass solver ASCII outputs; not the uniform-inlet momentum run.",
+  "assumptions": [
+    "Neutral mechanical flow",
+    "Uniform grass roughness (0.01 m)",
+    "No thermal lake breeze; not station-validated"
+  ],
+  "source": "https://dynamical.org/catalog/noaa-hrrr-analysis/",
+  "solverSource": "https://github.com/firelab/windninja/tree/4.0.0"
+}

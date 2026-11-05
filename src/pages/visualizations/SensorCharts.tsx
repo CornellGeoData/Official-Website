@@ -47,6 +47,7 @@ const M = { l: 46, r: 18, t: 10, b: 24 };
 
 export function SensorChart({ label, unit, points, y0, minSpan, epaBands, rating, footnote }: { label: string; unit: string; points: SensorPoint[]; y0?: number; minSpan?: number; epaBands?: boolean; rating?: Rating; footnote?: string }) {
   const [hover, setHover] = useState<number | null>(null);
+  const pinned = useRef(false);
   // real pixel coordinates: the path is regenerated at the measured width, so the
   // geometry is never non-uniformly stretched and slope means rate of change
   const [w, setW] = useState(0);
@@ -120,10 +121,10 @@ export function SensorChart({ label, unit, points, y0, minSpan, epaBands, rating
   };
 
   return (
-    <div style={{ background: PLATE.paper, border: '1px solid rgba(255,255,255,0.08)', padding: '16px 18px 12px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-          <div style={{ fontFamily: RESIPLE, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: PLATE.ink, whiteSpace: 'nowrap' }}>
+    <div data-plate style={{ background: PLATE.paper, border: '1px solid rgba(255,255,255,0.08)', padding: '16px 18px 12px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '6px 12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 10px', minWidth: 0 }}>
+          <div style={{ fontFamily: RESIPLE, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: PLATE.ink, overflowWrap: 'anywhere' }}>
             {subPM(label)}{unit && <> <span style={{ textTransform: 'none', letterSpacing: 0, color: PLATE.muted }}>({unit})</span></>}
           </div>
           {rating && (
@@ -133,16 +134,30 @@ export function SensorChart({ label, unit, points, y0, minSpan, epaBands, rating
             </div>
           )}
         </div>
-        {hp && (
-          <div style={{ fontFamily: RESIPLE, fontSize: 12, color: PLATE.muted, whiteSpace: 'nowrap' }}>
-            {fmtVal(hp.v)} at {fmtTime(hp.t)}
-          </div>
-        )}
+
+      </div>
+      <div aria-live="polite" aria-atomic="true" style={{ fontFamily: RESIPLE, fontSize: 13, lineHeight: 1.5, color: PLATE.muted, marginTop: 6 }}>
+        {hp ? `${fmtVal(hp.v)} ${unit}, ${fmtDay(hp.t)}, ${fmtTime(hp.t)}` : `Latest: ${fmtVal(cur.v)} ${unit} at ${fmtTime(cur.t)}`}
       </div>
       <div
         ref={wrapRef}
+        tabIndex={0}
+        role="slider"
+        aria-label={`${label} reading. Use left and right arrows to explore.`}
+        aria-valuemin={0}
+        aria-valuemax={Math.max(0, points.length - 1)}
+        aria-valuenow={hp ? hover! : points.length - 1}
+        aria-valuetext={`${fmtVal((hp ?? cur).v)} ${unit}, ${fmtDay((hp ?? cur).t)} ${fmtTime((hp ?? cur).t)}`}
+        onPointerDown={(e) => { pinned.current = true; onMove(e); }}
         onPointerMove={onMove}
-        onPointerLeave={() => setHover(null)}
+        onPointerLeave={() => { if (!pinned.current) setHover(null); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') { pinned.current = false; setHover(null); return; }
+          if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+          e.preventDefault();
+          pinned.current = true;
+          setHover((i) => e.key === 'Home' ? 0 : e.key === 'End' ? points.length - 1 : Math.max(0, Math.min(points.length - 1, (i ?? points.length - 1) + (e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 1))));
+        }}
         style={{ position: 'relative', marginTop: 8, touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
       >
         <svg width={w || '100%'} height={CHART_H} style={{ display: 'block' }} aria-label={`${label} history`}>
@@ -233,13 +248,13 @@ function WindRose({ points }: { points: SensorPoint[] }) {
     return `M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`;
   };
   return (
-    <div style={{ background: PLATE.paper, border: '1px solid rgba(255,255,255,0.08)', padding: '16px 18px 12px' }}>
-      <div style={{ fontFamily: RESIPLE, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: PLATE.ink, whiteSpace: 'nowrap' }}>
+    <div data-plate style={{ background: PLATE.paper, border: '1px solid rgba(255,255,255,0.08)', padding: '16px 18px 12px' }}>
+      <div style={{ fontFamily: RESIPLE, fontSize: 12, lineHeight: 1.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: PLATE.ink }}>
         Wind rose <span style={{ textTransform: 'none', letterSpacing: 0, color: PLATE.muted }}>
           {hover != null ? `${COMPASS[hover]}: ${Math.round((bins[hover] / points.length) * 100)}% of hours` : '(share of hours by heading)'}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${CHART_H}`} width="100%" height={CHART_H} style={{ display: 'block', marginTop: 8 }} aria-label="Wind rose" onPointerLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${CHART_H}`} width="100%" height={CHART_H} style={{ display: 'block', marginTop: 8 }} aria-label="Wind rose. Use left and right arrows to explore directions." tabIndex={0} role="slider" aria-valuemin={0} aria-valuemax={15} aria-valuenow={hover ?? 0} aria-valuetext={`${COMPASS[hover ?? 0]}: ${Math.round((bins[hover ?? 0] / points.length) * 100)}% of hours`} onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setHover((i) => ((i ?? 0) + (e.key === 'ArrowLeft' ? 15 : 1)) % 16); } }}>
         {[1 / 3, 2 / 3, 1].map((f) => (
           <circle key={f} cx={cx} cy={cy} r={R * f} fill="none" stroke={PLATE.grid} strokeWidth={1} />
         ))}
@@ -259,7 +274,7 @@ function WindRose({ points }: { points: SensorPoint[] }) {
         {/* full-radius invisible sectors catch the pointer, so a short petal
             is as hoverable as a long one */}
         {bins.map((_, i) => (
-          <path key={`hit-${i}`} d={wedge(i, R)} fill="transparent" onPointerEnter={() => setHover(i)} />
+          <path key={`hit-${i}`} d={wedge(i, R)} fill="transparent" onPointerEnter={() => setHover(i)} onPointerDown={() => setHover(i)} />
         ))}
       </svg>
     </div>

@@ -21,11 +21,11 @@ export function animationPose({mode, phase, basePose, stancePose, legs, kinds, l
     const kind = joint;
     if (!kinds.includes(kind)) throw new Error(`Unknown inspection joint ${kind}`);
     if (!legs.includes(leg)) throw new Error(`Unknown inspection leg ${leg}`);
-    const {lower, upper} = limits[kind];
+    const {lower, upper} = limits[`${leg}_${kind}`];
     result[`${leg}_${kind}`] = lower + (upper - lower) * blend;
   }
   for (const name of Object.keys(result)) {
-    const kind = name.split('_').slice(1).join('_'), {lower, upper} = limits[kind];
+    const {lower, upper} = limits[name];
     result[name] = Math.min(upper, Math.max(lower, result[name]));
   }
   return result;

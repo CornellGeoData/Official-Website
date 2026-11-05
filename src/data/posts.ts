@@ -1,3 +1,6 @@
+// max caps the width in px; alt describes what a chart or clip shows
+export type PostMedia = { img: string; max?: number; alt?: string } | { video: string; poster: string; max?: number; alt: string };
+
 export interface Post {
   slug: string; // project posts share their project's slug so its card header links here
   kind: 'project' | 'blog';
@@ -7,7 +10,7 @@ export interface Post {
   title: string;
   dek: string; // the one-liner under the headline
   photo?: string; // path under /public; omitted shows a placeholder
-  body: (string | { img: string; max?: number })[]; // a string per paragraph; { img } entries render as framed inline photos, max caps their width in px
+  body: (string | PostMedia)[]; // a string per paragraph; media entries render framed between the text cards
   links: { label: string; href: string }[];
   credit?: string; // photo credit line, shown under the links
 }
@@ -15,6 +18,29 @@ export interface Post {
 // newest first
 // slug must match a PROJECTS slug to link project card -> post
 export const POSTS: Post[] = [
+  {
+    slug: 'hexapod-locomotion-fall-2026',
+    kind: 'blog',
+    date: 'November 2026',
+    tag: 'Tech x CUPI',
+    tagColor: '#c92556',
+    title: 'Teaching the Hexapod to Follow a Ghost',
+    dek: 'In simulation, the hexapod now finishes a 20-second walk about half a millimeter from where it was told to go. The trick: a ghost.',
+    photo: '/blog/hexapod-sim-walk.webp',
+    body: [
+      "The hexapod got a redesign this fall. Our partners at Cornell Physical Intelligence (CUPI) moved it to direct drive: three motors on each leg, each turning its joint directly, for 18 in all and about 7.5 kg. It isn't built yet, so for now it lives in simulation, where a neural network learns to walk by practicing on 128 copies of the robot at once on the DGX Spark we share with CUPI.",
+      "Walking was only half the problem. We also need it to go where it's told, because a survey robot that wanders is just an expensive way to get lost. Early walkers finished a 20-second stroll about 15 cm off target.",
+      "So CUPI gave it a ghost: an invisible copy of the robot that follows every command perfectly. The controller can see how far it is from the ghost and earns reward for staying close. After a few rounds of training, **it finishes those same walks about half a millimeter from the ghost**, at a gentle 5 cm/s, with its heading barely moving.",
+      { img: '/blog/hexapod-ghost-gap.svg', max: 668, alt: 'Line chart on a log scale. The median distance from the ghost after a 20-second walk starts at 152 mm with no ghost, then falls to 43, 14, 0.39, and 0.57 mm over four more training runs.' },
+      "It's stubborn, too. Here it gets pushed off a ledge, lands upside down, and just keeps walking.",
+      { video: '/projects/hexapod-walk.mp4', poster: '/projects/hexapod-walk.webp', max: 460, alt: 'In simulation, the hexapod is pushed off a ledge, lands upside down, and keeps walking.' },
+      "Half a millimeter is a simulator number, since the simulator always knows exactly where the robot is. A real robot steering by GPS won't be so lucky, and that's one of the fun problems ahead. A newer version, still in review, is already walking at up to 15 cm/s in eight directions in CUPI's CPU simulator. Next up: the full test suite, faster turns, rough ground, and then building the real thing.",
+    ],
+    links: [
+      { label: 'Explore the hexapod in 3D', href: '#/sensors/hexapod' },
+      { label: "CUPI's progress site", href: 'https://cornell-physical-intelligence.github.io/hexapod-cupi/' },
+    ],
+  },
   {
     slug: 'summer-spotlight-suchit-basineni',
     kind: 'blog',
@@ -97,7 +123,7 @@ export const POSTS: Post[] = [
     photo: '/projects/hexapod.webp',
     body: [
       "This year, we are excited to announce an official partnership with Cornell University Physical Intelligence (CUPI) to build a self-navigating data collection hexapod for the earth sciences, starting with LiDAR collection. CUPI is one of the most inventive robotics teams on Cornell's campus, specializing in the use of AI to improve robotic manipulation and perception. They have previously honed their skills through drone racing, but now with GeoData they are taking steps to apply those skills in the field.",
-      { img: '/blog/cupi-sticker.webp' },
+      { img: '/blog/cupi-sticker.webp', max: 420, alt: 'The CUPI sticker: a red crab on a beach under the name CUPI, in a round black border.' },
       "Currently, the majority of LiDAR data is collected from aerial flights, satellites, or UAV scans. Satellites are convenient and offer high coverage, but their coarseness has become a major problem for important tasks like identification. UAV data, on the other hand, is very dense, but it is an expensive initial investment and comes with problems of range, flight planning, and local terrain that take a lot of time and energy to mitigate. The hexapod slots in as a nice in-between: the density is there, and range and availability are fixed by the cheapness of the design and long automated run times.",
       "Dense forest makes the problem concrete. In high-density canopy, coverage from above doesn't always penetrate: the crowns swallow the pulses, and the forest floor comes back patchy or not at all. The future of LiDAR and geotagged data is in data merging, combining passes into improved datasets that no single platform could produce alone. The UAV can cover the tops, the hexapod can cover the bottoms, and the merged cloud gets the whole forest.",
       { img: '/blog/forest-lidar.webp' },
@@ -184,7 +210,7 @@ export const POSTS: Post[] = [
     photo: '/projects/nisar.webp',
     body: [
       "Five Zynect Soilmote nodes at the Game Farm log volumetric water content about every half hour over LoRa. NISAR estimates the same quantity from orbit with radar; the nodes are the ground reference it gets checked against.",
-      'GRASP is still reporting. CENSE, CAMPS, GLITZ, and NINJA have stopped, and their full archives are on the data page.',
+      'CENSE and NINJA are reporting. GRASP, CAMPS, and GLITZ have stopped, and their full archives are on the data page.',
     ],
     links: [
       { label: 'Soil moisture charts', href: '#/sensors/soil' },
