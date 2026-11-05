@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { EARTH_GONE, EARTH_RADIUS, ITHACA_LATLON, TURN_END, altitude, focal, globeFrame, regionFrame } from './dive';
+import { EARTH_GONE, EARTH_RADIUS, ITHACA_LATLON, TURN_END, altitude, focal, globeFrame, isSmallScreen, regionFrame } from './dive';
 
 // The home page's draggable globe. The stars behind it are Sky.tsx.
 interface MountArgs {
@@ -17,8 +17,8 @@ const SURFACE_R = 0.571;
 const PIN_R = SURFACE_R;
 // sharper layers of the same imagery around Ithaca, for the way down. lon and lat in degrees, west to east, south to north.
 const LAYERS = [
-  { url: '/art/earth-ne.webp', lon: [-105, -60], lat: [28, 56] },
-  { url: '/art/earth-ny.webp', lon: [-84, -68], lat: [38, 48] },
+  { url: 'earth-ne', lon: [-105, -60], lat: [28, 56] },
+  { url: 'earth-ny', lon: [-84, -68], lat: [38, 48] },
 ];
 
 // scratch vectors - projection runs per pin per frame and must not allocate
@@ -37,6 +37,16 @@ export class GlobeEngine {
   _shown = false;
   _raf?: number;
   _dragCleanup?: () => void;
+  _onLost?: () => void;
+  _onReturn?: () => void;
+  // what the last drawn frame showed: nothing here moves by itself, so an unchanged frame isn't redrawn
+  _state = '';
+  _dirty = true;
+  _w = 0;
+  _h = 0;
+  _ratio = 0;
+  // a quarter of the texture memory, no multisampling (the largest buffer here) and fewer pixels to shade
+  small = isSmallScreen();
 
   userYaw = 0.35;
   userPitch = 0.06;
@@ -77,7 +87,13 @@ export class GlobeEngine {
       const w = canvasEl.clientWidth;
       const h = canvasEl.clientHeight;
       if (w === 0 || h === 0) return;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      // A phone's toolbar fires resize mid-scroll with this canvas unchanged, and setting a canvas's size
+      // clears and reallocates its buffers even when the size is the same.
+      const ratio = Math.min(window.devicePixelRatio, this.small ? 1.5 : 2);
+      if (w === this._w && h === this._h && ratio === this._ratio) return;
+      this._w = w; this._h = h; this._ratio = ratio;
+      this._dirty = true;
+      renderer.setPixelRatio(ratio);
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       const rest = globeFrame(w, h);
@@ -95,6 +111,15 @@ export class GlobeEngine {
       onNoWebGL?.();
       return;
     }
+    // A phone lost its GPU to memory pressure, and restoring it would only invite that again. A desktop's GPU
+    // reset (waking from sleep, a driver update) comes back by itself, and three reloads everything.
+    this._onLost = () => { if (this.small) onNoWebGL?.(); };
+    canvasEl.addEventListener('webglcontextlost', this._onLost);
+    // Frames aren't redrawn unless something changed, so draw one when there may be nothing left on screen.
+    this._onReturn = () => { this._dirty = true; };
+    canvasEl.addEventListener('webglcontextrestored', this._onReturn);
+    document.addEventListener('visibilitychange', this._onReturn);
+    window.addEventListener('pageshow', this._onReturn);
     this.addDrag();
     this.onResize();
     // the canvas fades in off the first rendered frame instead of popping:
@@ -107,11 +132,29 @@ export class GlobeEngine {
   }
 
   unmount(): void {
+    if (this._destroyed) return;
     this._destroyed = true;
     if (this._raf) cancelAnimationFrame(this._raf);
     window.removeEventListener('resize', this.onResize);
     if (this._dragCleanup) this._dragCleanup();
-    if (this.renderer) this.renderer.dispose();
+    if (this._onLost) this.canvasEl.removeEventListener('webglcontextlost', this._onLost);
+    if (this._onReturn) {
+      this.canvasEl.removeEventListener('webglcontextrestored', this._onReturn);
+      document.removeEventListener('visibilitychange', this._onReturn);
+      window.removeEventListener('pageshow', this._onReturn);
+    }
+    // Hand it all back now, not whenever the collector runs: every return to the home page builds a new
+    // globe, and on a phone a few abandoned sets of textures are enough to get the tab killed.
+    this.scene?.traverse((o) => {
+      const { geometry, material } = o as THREE.Mesh;
+      geometry?.dispose();
+      for (const m of [material].flat() as THREE.MeshStandardMaterial[]) { m?.map?.dispose(); m?.dispose(); }
+    });
+    if (this.renderer) {
+      this.renderer.dispose();
+      // not while developing: a hot reload puts the next globe on this same canvas
+      if (import.meta.env.PROD) this.renderer.forceContextLoss();
+    }
   }
 
   addDrag(): void {
@@ -210,7 +253,7 @@ export class GlobeEngine {
     this.camera = camera;
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: this.canvasEl, alpha: true, antialias: true });
+      renderer = new THREE.WebGLRenderer({ canvas: this.canvasEl, alpha: true, antialias: !this.small });
     } catch (err) {
       console.error('[engine] WebGLRenderer construction failed:', err);
       this._noWebGL = true;
@@ -265,12 +308,14 @@ export class GlobeEngine {
     // south-up (a glTF-era convention), so it loads with flipY off.
     const white = new THREE.Color(0xffffff);
     const dark = new THREE.Color(0x16222e);
-    const tex = new THREE.TextureLoader().load('/earth-4k.webp', () => {
+    const tex = new THREE.TextureLoader().load(this.small ? '/earth-2k.webp' : '/earth-4k.webp', () => {
+      if (this._destroyed) return;
       // upload now, off-screen, so the first frame that shows the earth does
       // not also pay for 4k mipmap generation - that stutter reads as a flash
       this.renderer?.initTexture(tex);
       mat.map = tex;
       mat.needsUpdate = true;
+      this._dirty = true;
       this.loadLayers(group);
       // material color multiplies the map: ease it dark -> white so the
       // texture fades in over the skeleton instead of popping
@@ -278,40 +323,56 @@ export class GlobeEngine {
       const fade = () => {
         const k = Math.min(1, (performance.now() - t0) / 500);
         mat.color.copy(dark).lerp(white, k);
+        this._dirty = true;
         if (k < 1 && !this._destroyed) requestAnimationFrame(fade);
       };
       fade();
     });
     tex.flipY = false;
     tex.encoding = THREE.sRGBEncoding;
-    if (this.renderer) tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    if (this.renderer) tex.anisotropy = this.maxAnisotropy();
+  }
+
+  maxAnisotropy(): number {
+    return Math.min(this.renderer!.capabilities.getMaxAnisotropy(), this.small ? 4 : 16);
   }
 
   // Fetched once the earth has arrived, before anyone is mid-zoom, so uploading them can't stutter a scroll.
   loadLayers(group: THREE.Group): void {
     const rad = Math.PI / 180;
     LAYERS.forEach(({ url, lon, lat }, i) => {
-      new THREE.TextureLoader().load(url, (tex) => {
+      new THREE.TextureLoader().load(`/art/${url}${this.small ? '-phone' : ''}.webp`, (tex) => {
         if (this._destroyed) return;
         tex.encoding = THREE.sRGBEncoding;
-        if (this.renderer) { tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy(); this.renderer.initTexture(tex); }
+        if (this.renderer) { tex.anisotropy = this.maxAnisotropy(); this.renderer.initTexture(tex); }
         // same parameterisation as latLon(). The sphere is convex, so with back faces culled nothing needs a depth test.
         const geo = new THREE.SphereGeometry(SURFACE_R, 48, 32, (lon[0] + 180) * rad, (lon[1] - lon[0]) * rad, (90 - lat[1]) * rad, (lat[1] - lat[0]) * rad);
         const layer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, roughness: 1, transparent: true, depthTest: false }));
         layer.renderOrder = i + 1;
         group.add(layer);
+        this._dirty = true;
       });
     });
   }
 
   animate = (): void => {
     if (this._destroyed || this._noWebGL || !this.renderer) return;
-    const renderer = this.renderer;
     this._raf = requestAnimationFrame(this.animate);
+    this.draw();
+  };
 
+  // Also called from the scroll loop, so the globe and the map it hands over to are drawn from the same
+  // scroll position in the same frame. From its own frame callback alone it can run a frame behind the map.
+  draw(): void {
+    if (this._destroyed || !this.renderer) return;
+    const renderer = this.renderer;
     const k = this.zoom;
     // fully behind the map from here on: don't spend every later frame drawing what nobody can see
     if (k >= EARTH_GONE) return;
+    const state = `${k} ${this.userYaw} ${this.userPitch}`;
+    if (state === this._state && !this._dirty) return;
+    this._state = state;
+    this._dirty = false;
     const vw = this.canvasEl.clientWidth, vh = this.canvasEl.clientHeight, f = focal(vh), at = regionFrame(vw, vh, k);
     const yaw = this.baseRotY + this.userYaw, pitch = Math.max(-1.25, Math.min(1.25, this.baseRotX + this.userPitch));
     // where Ithaca sits on screen at rest, in px from the centre, y up
@@ -335,5 +396,5 @@ export class GlobeEngine {
       requestAnimationFrame(() => { this.canvasEl.style.opacity = '1'; });
     }
     this.onFrame();
-  };
+  }
 }

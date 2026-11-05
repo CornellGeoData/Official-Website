@@ -172,7 +172,7 @@ function SupportSection() {
   return (
     <section id="support" style={{ padding: '104px clamp(24px,5vw,72px) 110px' }}>
       <div style={{ maxWidth: 820 }}>
-        <h2 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(42px,6.2vw,80px)', letterSpacing: '-0.03em', lineHeight: 1, margin: '0 0 0 -0.03em' }}>Explore the world,<br /><span style={{ color: '#4fae7d' }}>one data point at a time</span></h2>
+        <h2 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(42px,6.2vw,80px)', letterSpacing: '-0.03em', lineHeight: 1, margin: '0 0 0 -0.03em' }}>Help us build<br /><span style={{ color: '#4fae7d' }}>the next instrument</span></h2>
         {!open && <a href="#/sponsors" style={{ ...PILL_PRIMARY, marginTop: 38 }}>Become a sponsor</a>}
       </div>
       {open && <DonationBar msLeft={left} />}
@@ -189,7 +189,10 @@ export function HomePage() {
     <section id="team" style={{ padding: '0 clamp(24px,5vw,72px) 64px' }}>
       <div>
         <figure className="map-frame" style={{ margin: '0 auto', position: 'relative', maxWidth: 840 }}>
-          <img loading="lazy" decoding="async" src="/team.webp" alt="The GeoData team on the stairs of Upson Hall" style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '1600/1066' }} />
+          <picture>
+            {import.meta.env.PROD && <source media="(max-width: 720px)" srcSet="/team-800.webp" />}
+            <img loading="lazy" decoding="async" src="/team.webp" alt="The GeoData team on the stairs of Upson Hall" style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '1600/1066' }} />
+          </picture>
           <figcaption className="team-photo-caption" style={{ position: 'absolute', bottom: 30, left: 30, background: '#086727', color: '#eaf2ee', fontFamily: "'Intan',sans-serif", fontSize: 'clamp(16px,2.2vw,24px)', letterSpacing: '0.04em', padding: '10px 22px', whiteSpace: 'nowrap' }}>Team Photo '25 – '26</figcaption>
         </figure>
       </div>

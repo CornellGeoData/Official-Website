@@ -91,7 +91,8 @@ export function SponsorsPage() {
         <div className="sponsor-hero" style={{ display: 'flex', rowGap: 'clamp(48px,4vw,64px)', flexWrap: 'wrap', alignItems: 'center', minHeight: 'calc(100vh - 150px)' }}>
           <div style={{ flex: '0 1 560px', minWidth: 0 }}>
             <h2 style={H2}>Sponsorships &amp; Donations</h2>
-            <p style={{ ...BODY, maxWidth: 620, margin: '26px 0 0' }}>Sponsorships help keep this team going so we can teach students and do important research. Financial sponsorships and donations of hardware or equipment are greatly appreciated and help us build, test, and deploy our projects.</p>
+            <p style={{ ...BODY, maxWidth: 620, margin: '26px 0 0' }}>Your support helps students build instruments, buy sensors, and carry out fieldwork.</p>
+            <p style={{ ...BODY, maxWidth: 620, margin: '16px 0 0' }}>We also welcome RAM, graphics cards, and CPUs for our computing projects.</p>
             <div className="sponsor-actions" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 34 }}>
               <CopyEmailButton label="Copy our email" />
               <a href={SPONSOR_PACKET_PDF} download="Cornell-GeoData-Sponsorship-2026-2027.pdf" style={{ ...PILL, padding: '13px 28px', fontSize: 17 }}>Download the 2026–2027 packet (PDF)</a>
@@ -104,7 +105,7 @@ export function SponsorsPage() {
         {/* TIERS */}
         <div style={{ marginTop: 110 }}>
           <h3 style={{ fontFamily: MANTI, fontWeight: 700, fontSize: 'clamp(28px,3.4vw,40px)', letterSpacing: '-0.02em', margin: '16px 0 0' }}>Sponsorship tiers</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(240px,100%),1fr))', gap: 26, marginTop: 44 }}>
+          <div className="sponsor-tiers">
             {TIERS.map((tier) => (
               <div key={tier.name} style={{ background: '#141c26', padding: '26px 24px' }}>
                 <div style={{ fontFamily: RESIPLE, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: tier.color }}>{tier.name}</div>
@@ -123,7 +124,8 @@ export function SponsorsPage() {
 
         {/* ALUMNI */}
         <div style={{ marginTop: 130 }}>
-          <h2 style={H2}>Alumni Ball Pit</h2>
+          <h2 style={H2}>Where our alumni go</h2>
+          <p style={{ ...BODY, maxWidth: 680, margin: '24px 0 0' }}>Places where GeoData alumni have worked or continued their studies.</p>
           <div className="team-photo-frame" style={{ padding: 14, border: '2px solid #086727', marginTop: 40 }}>
             <AlumniPit alumni={ALUMNI} />
           </div>

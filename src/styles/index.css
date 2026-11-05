@@ -7,33 +7,33 @@
 @font-face {
   font-display: swap;
   font-family: 'Intan';
-  src: url('/fonts/intan.otf');
+  src: url('/fonts/intan.woff2');
   font-weight: 100 900;
 }
 
 @font-face {
   font-display: swap;
   font-family: 'Resiple';
-  src: url('/fonts/resiple.ttf');
+  src: url('/fonts/resiple.woff2');
 }
 
 @font-face {
   font-display: swap;
   font-family: 'Parachutes Sans';
-  src: url('/fonts/parachutes-sans.ttf');
+  src: url('/fonts/parachutes-sans.woff2');
 }
 
 @font-face {
   font-display: swap;
   font-family: 'Manti Sans';
-  src: url('/fonts/manti-sans.otf');
+  src: url('/fonts/manti-sans.woff2');
   font-weight: normal;
 }
 
 @font-face {
   font-display: swap;
   font-family: 'Manti Sans';
-  src: url('/fonts/manti-sans-bold.otf');
+  src: url('/fonts/manti-sans-bold.woff2');
   font-weight: bold;
 }
 
@@ -41,15 +41,20 @@
 @font-face {
   font-display: swap;
   font-family: 'Source Serif 4';
-  src: url('/fonts/source-serif-4.ttf');
+  src: url('/fonts/source-serif-4.woff2');
   font-weight: normal;
 }
 
 @font-face {
   font-display: swap;
   font-family: 'Source Serif 4';
-  src: url('/fonts/source-serif-4-bold.ttf');
+  src: url('/fonts/source-serif-4-bold.woff2');
   font-weight: bold;
+}
+
+/* no rubber-band past the ends of the page, which would pull the fixed header along with it */
+html {
+  overscroll-behavior-y: none;
 }
 
 html,
@@ -77,6 +82,11 @@ body::after {
   opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   background-size: 160px 160px;
+}
+
+/* a full-screen blend over everything, on a screen too dense to show the grain anyway */
+@media (max-width: 1100px) {
+  body::after { display: none; }
 }
 
 img {
@@ -202,6 +212,26 @@ details[open] > summary .chev::before {
     display: flex !important;
   }
 }
+
+/* Four tiers stay balanced at every width. */
+.sponsor-tiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 36px; }
+@media (max-width: 1199px) { .sponsor-tiers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .sponsor-tiers { grid-template-columns: 1fr; } }
+
+.hero-mission { max-width: 360px; margin: 22px 0 0; color: #c4d1d9; font-size: clamp(17px, 1.8vw, 21px); line-height: 1.5; text-wrap: pretty; }
+@media (max-width: 1100px) { .hero-mission { max-width: 340px; margin-top: 16px; } }
+
+.post-article { max-width: 920px; margin: 0 auto; }
+.post-reading { max-width: 680px; margin-inline: auto; }
+.post-dek { font-size: clamp(18px, 2vw, 21px); line-height: 1.55; color: #a9bcc6; margin: 24px 0 0; }
+.post-hero { margin: 40px 0 48px; }
+.post-hero img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+.post-body > p { font-family: 'Source Serif 4', Georgia, serif; font-size: 18px; line-height: 1.8; color: #c4d1d9; margin: 0 0 26px; }
+.post-figure { width: 100%; margin: 36px auto; }
+.post-figure img { display: block; width: 100%; height: auto; }
+.post-caption { font-family: 'Resiple', sans-serif; font-size: 13.5px; line-height: 1.6; color: #a9bcc6; margin-top: 12px; }
+.post-resources { margin-top: 44px; padding-top: 24px; border-top: 1px solid #34434f; }
+@media (max-width: 600px) { .post-hero { margin-block: 30px 34px; } .post-body > p { font-size: 17.5px; } }
 
 .posts-page { padding-top: 126px !important; }
 @media (max-width: 720px) {
@@ -366,17 +396,21 @@ button.give-flag[aria-pressed='true'] { animation: give-tap 300ms ease-out; }
 }
 
 /* crowdfunding banner: under the fixed header, scrolling away with the page */
-.donor-banner { --donor-h: 38px; }
-.donor-banner { position: absolute; top: 102px; left: 0; right: 0; z-index: 40; display: flex; align-items: center; gap: clamp(14px, 2vw, 28px); height: var(--donor-h); padding: 0 clamp(24px, 5vw, 72px); border-block: 1px solid #2c4b3e; background: #14251f; font-family: 'Resiple', sans-serif; font-size: 15px; white-space: nowrap; }
+.donor-banner { --donor-h: 38px; --donor-bg: #14251f; }
+.donor-banner { position: absolute; top: 102px; left: 0; right: 0; z-index: 40; display: flex; align-items: center; gap: clamp(14px, 2vw, 28px); height: var(--donor-h); padding: 0 clamp(24px, 5vw, 72px); border-block: 1px solid #2c4b3e; background: var(--donor-bg); font-family: 'Resiple', sans-serif; font-size: 15px; white-space: nowrap; }
 .donor-banner, .donor-banner:hover { color: #b3c6be; }
-.donor-banner { transition: background-color 150ms ease-out; }
-.donor-banner:hover { background: #1a3028; }
+.donor-banner:hover { --donor-bg: #1a3028; }
 .donor-banner:focus-visible { outline-color: #84d3ab; outline-offset: -4px; }
 .donor-banner strong { flex-shrink: 0; color: #84d3ab; }
-.donor-thanks { position: relative; flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); }
+.donor-thanks { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+/* the names fade at each end under the banner's own color. A mask here makes Safari redo it around the moving names */
+.donor-thanks::before, .donor-thanks::after { content: ''; position: absolute; z-index: 1; top: 0; bottom: 0; width: 24px; pointer-events: none; }
+.donor-thanks::before { left: 0; background: linear-gradient(90deg, var(--donor-bg), transparent); }
+.donor-thanks::after { right: 0; background: linear-gradient(270deg, var(--donor-bg), transparent); }
 .donor-sr { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); }
 .donor-track { display: inline-flex; animation: donor-scroll linear infinite; }
 .donor-track span { padding-right: 72px; }
+.donor-banner:hover .donor-track, .donor-banner:focus-visible .donor-track { animation-play-state: paused; }
 @keyframes donor-scroll { to { transform: translateX(-50%); } }
 /* where the hero is pinned to the top of the screen, it starts below the banner while there is one */
 @media (max-width: 1100px) {
@@ -396,6 +430,8 @@ button.give-flag[aria-pressed='true'] { animation: give-tap 300ms ease-out; }
   .donor-track { animation: none; }
   .donor-track span + span { display: none; }
   .donor-thanks { overflow-x: auto; }
+  /* it scrolls here, and the fades would slide along with the names */
+  .donor-thanks::before, .donor-thanks::after { display: none; }
 }
 
 /* home: the earth zoom lands on a fixed terrain map, and projects crossfade over it */
@@ -406,9 +442,10 @@ button.give-flag[aria-pressed='true'] { animation: give-tap 300ms ease-out; }
 .terrain { position: fixed; top: 0; left: 0; width: 100%; height: 100lvh; z-index: 0; overflow: hidden; visibility: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .terrain-veil { position: absolute; inset: 0; background: #0e141c; opacity: 0; }
 .terrain-fade { position: absolute; inset: auto 0 0; height: 16vh; background: linear-gradient(transparent, #0e141c); }
-/* soft edges all round: the lake map melts into the region map, and that into the page */
-.terrain img { position: absolute; top: 0; left: 0; width: 2606px; height: 4000px; max-width: none; transform-origin: 0 0; will-change: transform; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent), linear-gradient(transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent), linear-gradient(transparent, #000 4%, #000 96%, transparent); -webkit-mask-composite: source-in; mask-composite: intersect; }
-.terrain img.terrain-region { width: 2700px; height: 1700px; -webkit-mask-image: none; mask-image: none; }
+/* soft edges all round: the lake map melts into the region map, and that into the page. The fade is baked into the
+   images' alpha. As a CSS mask it needed a layer the size of the whole map: over 500MB on a phone, measured. */
+.terrain img { position: absolute; top: 0; left: 0; width: 2606px; height: 4000px; max-width: none; transform-origin: 0 0; will-change: transform; }
+.terrain img.terrain-region { width: 2700px; height: 1700px; }
 .map-labels { position: absolute; inset: 0; z-index: 1; }
 .map-label { position: absolute; top: 0; left: 0; will-change: transform; }
 .map-label span { position: absolute; white-space: nowrap; font-family: 'Resiple', sans-serif; font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #a9d5ea; text-shadow: 0 0 3px #0e141c, 0 0 7px #0e141c, 0 0 14px #0e141c; }
@@ -456,12 +493,11 @@ button.give-flag[aria-pressed='true'] { animation: give-tap 300ms ease-out; }
   align-items: center;
   gap: 15vw;
   padding: 96px clamp(40px, 4vw, 80px) 40px clamp(24px, 5vw, 72px);
-  will-change: transform;
 }
 .chapter > * { opacity: 0; }
 /* the crossfades run on their own layers; measured, fewer dropped frames */
 @media (min-width: 1101px) {
-  .chapter { transform: translateY(var(--chapter-offset, 0px)); pointer-events: var(--chapter-pointer-events, auto); }
+  .chapter { transform: translateY(var(--chapter-offset, 0px)); pointer-events: var(--chapter-pointer-events, auto); will-change: transform; }
   .chapter > * { will-change: opacity; }
 }
 /* a map-maker's halo: the page color knocks contour lines out from behind the words */
@@ -503,6 +539,12 @@ picture { display: contents; }
 .team-head p { margin: 0; font-family: 'Resiple', sans-serif; font-size: clamp(16px, 1.45vw, 18px); color: #cdd8de; }
 
 @media (max-width: 1100px) {
+  /* The browser backs a layer by its laid-out size, at the screen's density, before any scale. At full size a map
+     on a 3x phone is a 7800px layer drawn at a third of that, so lay it out close to the size it is shown. */
+  .terrain img { width: 1042.4px; height: 1600px; }
+  .terrain img.terrain-region { width: 1080px; height: 680px; }
+  /* four blurred copies of every letter is slow to paint, and a flick paints a lot of letters at once */
+  .chapter > div:first-child, .statement { text-shadow: 0 0 5px #0e141c, 0 0 14px #0e141c; }
   .chapters { height: auto; }
   .stage { position: static; height: auto; overflow: visible; }
   .chapter { position: static; grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 9vh 44px 9vh 24px; }
@@ -565,6 +607,8 @@ picture { display: contents; }
   .chapter-media { justify-self: start; }
   .chapter-media-tall { width: 82%; }
   .map-frame { padding: 6px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
+  /* the still stands where the live globe would, under the copy */
+  .globe-fallback { object-fit: contain !important; object-position: 50% 78% !important; }
 }
 @media (max-width: 1100px) and (orientation: landscape) {
   .hero-panel { top: 32svh !important; width: 52% !important; padding-left: 24px !important; }
@@ -578,6 +622,8 @@ picture { display: contents; }
   .chapter { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
   .chapter > div:first-child { order: 0; }
   .chapter-media-tall { width: 100%; max-height: none; }
+  /* clear of the header and banner, beside the copy */
+  .globe-fallback { padding-top: 96px; object-position: 100% 50% !important; }
 }
 @media (max-width: 720px) and (orientation: portrait) and (max-height: 650px) {
   .hero-panel { top: 88px !important; }

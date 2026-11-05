@@ -12,6 +12,10 @@ export const REGION = { x: -8073, y: -6335, scale: 100 / 17, turn: 0.3351 };
 const REGION_CENTRE = { x: -401, y: 1613 };
 const MAP_KM_PER_PX = 0.017;
 
+// Phones and small tablets, where the stacked layout runs: smaller art, because their screens need no more and
+// the system kills a tab that uses too much memory. Chosen once at load, rotating doesn't reload anything.
+export const isSmallScreen = () => window.innerWidth <= 1100;
+
 // the earth as drawn: its radius in scene units, and where the camera starts above the ground
 export const EARTH_RADIUS = 0.71375;
 const KM_PER_UNIT = 6371 / EARTH_RADIUS;

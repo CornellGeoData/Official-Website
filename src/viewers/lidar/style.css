@@ -1,4 +1,4 @@
-@font-face{font-family:Resiple;src:url('/fonts/resiple.ttf') format('truetype');font-display:swap}
+@font-face{font-family:Resiple;src:url('/fonts/resiple.woff2') format('woff2');font-display:swap}
 :root{--edge-top:max(12px,env(safe-area-inset-top));--edge-right:max(12px,env(safe-area-inset-right));--edge-bottom:max(12px,env(safe-area-inset-bottom));--edge-left:max(12px,env(safe-area-inset-left));font-family:Resiple,system-ui,sans-serif;color:#e6ecf0;background:#0e141c;font-synthesis:none;color-scheme:dark}
 *{box-sizing:border-box;-webkit-user-select:none;user-select:none}body{margin:0;overflow:hidden}button,input,select{font:inherit}button,a,input,select,summary{-webkit-tap-highlight-color:transparent}button,select,summary{cursor:pointer}button{color:inherit}button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #7ed7ae;outline-offset:4px}
 #view{position:absolute;inset:0;touch-action:none;outline:none}#view canvas{display:block;outline:none}#view:focus-visible{box-shadow:inset 0 0 0 2px #7ed7ae}

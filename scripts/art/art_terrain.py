@@ -43,7 +43,12 @@ im = Image.fromarray((np.clip(rgb, 0, 1) * 255 + 0.5).astype(np.uint8))
 # rendered south-up, which is the frame the numbers above are in, then turned to north-up
 im = im.rotate(180)
 im.save(f'{art}/terrain-full.png')
-im.save(f'{pub}/terrain.webp', quality=82, method=6)
+# soft edges, baked in, so the lake map melts into the region map behind it. The same fade as a CSS mask costs
+# a layer the size of the whole map, which is hundreds of MB on a phone.
+edge = lambda n: np.clip(np.minimum(np.arange(n), n - 1 - np.arange(n)) / (n * 0.04), 0, 1)
+faded = im.copy()
+faded.putalpha(Image.fromarray((edge(H)[:, None] * edge(W)[None, :] * 255 + 0.5).astype(np.uint8)))
+faded.save(f'{pub}/terrain.webp', quality=82, method=6)
 # Cayuga's centre line, so the camera can keep the ribbon in the same place on screen
 lab, _ = ndi.label(wc > 0.5)
 sizes = ndi.sum(np.ones(lab.shape), lab, np.arange(1, lab.max() + 1))

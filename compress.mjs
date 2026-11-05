@@ -31,10 +31,16 @@ async function walk(dir) {
 }
 
 // A desktop tile is about 240 css px. A sharp small copy looks better than the browser shrinking a 1400px
-// photo, and it is a tenth of the download. Phones, where a photo fills the screen, still get the full one.
+// photo, and it is a tenth of the download. Phones show two tiles a row, so they take it too.
 for (const f of await fs.readdir('dist/members')) {
   if (!f.endsWith('.webp') || f.endsWith('-600.webp')) continue;
   await sharp(`dist/members/${f}`).resize({ width: 600, withoutEnlargement: true }).webp({ quality: 86, effort: 6, smartSubsample: true }).toFile(`dist/members/${f.replace('.webp', '-600.webp')}`);
+}
+
+// The home page's photos, for phones: some are 2000px wide, and each costs its full size in memory to show.
+for (const f of [...(await fs.readdir('dist/projects')).map((n) => `projects/${n}`), 'team.webp']) {
+  if (!f.endsWith('.webp') || f.endsWith('-800.webp')) continue;
+  await sharp(`dist/${f}`).resize({ width: 800, withoutEnlargement: true }).webp({ quality: 82, effort: 6, smartSubsample: true }).toFile(`dist/${f.replace('.webp', '-800.webp')}`);
 }
 
 await walk('dist');

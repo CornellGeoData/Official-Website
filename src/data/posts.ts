@@ -1,16 +1,18 @@
-// max caps the width in px; alt describes what a chart or clip shows
-export type PostMedia = { img: string; max?: number; alt?: string } | { video: string; poster: string; max?: number; alt: string };
+// max caps the width in px; alt describes the media, caption explains it to readers
+export type PostMedia = ({ img: string; alt?: string } | { video: string; poster: string; alt: string }) & { max?: number; caption?: string };
 
 export interface Post {
   slug: string; // project posts share their project's slug so its card header links here
   kind: 'project' | 'blog';
   date: string;
+  author?: string;
   tag: string;
   tagColor: string;
   title: string;
   dek: string; // the one-liner under the headline
   photo?: string; // path under /public; omitted shows a placeholder
-  body: (string | PostMedia)[]; // a string per paragraph; media entries render framed between the text cards
+  photoCaption?: string;
+  body: (string | PostMedia)[];
   links: { label: string; href: string }[];
   credit?: string; // photo credit line, shown under the links
 }
@@ -24,17 +26,19 @@ export const POSTS: Post[] = [
     date: 'November 2026',
     tag: 'Tech x CUPI',
     tagColor: '#c92556',
-    title: 'Teaching the Hexapod to Follow a Ghost',
-    dek: 'In simulation, the hexapod now finishes a 20-second walk about half a millimeter from where it was told to go. The trick: a ghost.',
+    title: 'Hexapod update: testing the walking controller',
+    dek: "CUPI redesigned the hexapod this fall. We're testing how well it follows a path in simulation before building the physical robot.",
     photo: '/blog/hexapod-sim-walk.webp',
+    photoCaption: 'The hexapod during a simulated walking test.',
     body: [
-      "The hexapod got a redesign this fall. Our partners at Cornell Physical Intelligence (CUPI) moved it to direct drive: three motors on each leg, each turning its joint directly, for 18 in all and about 7.5 kg. It isn't built yet, so for now it lives in simulation, where a neural network learns to walk by practicing on 128 copies of the robot at once on the DGX Spark we share with CUPI.",
-      "Walking was only half the problem. We also need it to go where it's told, because a survey robot that wanders is just an expensive way to get lost. Early walkers finished a 20-second stroll about 15 cm off target.",
-      "So CUPI gave it a ghost: an invisible copy of the robot that follows every command perfectly. The controller can see how far it is from the ghost and earns reward for staying close. After a few rounds of training, **it finishes those same walks about half a millimeter from the ghost**, at a gentle 5 cm/s, with its heading barely moving.",
-      { img: '/blog/hexapod-ghost-gap.svg', max: 668, alt: 'Line chart on a log scale. The median distance from the ghost after a 20-second walk starts at 152 mm with no ghost, then falls to 43, 14, 0.39, and 0.57 mm over four more training runs.' },
-      "It's stubborn, too. Here it gets pushed off a ledge, lands upside down, and just keeps walking.",
-      { video: '/projects/hexapod-walk.mp4', poster: '/projects/hexapod-walk.webp', max: 460, alt: 'In simulation, the hexapod is pushed off a ledge, lands upside down, and keeps walking.' },
-      "Half a millimeter is a simulator number, since the simulator always knows exactly where the robot is. A real robot steering by GPS won't be so lucky, and that's one of the fun problems ahead. A newer version, still in review, is already walking at up to 15 cm/s in eight directions in CUPI's CPU simulator. Next up: the full test suite, faster turns, rough ground, and then building the real thing.",
+      "We're working with Cornell Physical Intelligence (CUPI) on a walking robot that will carry LiDAR equipment for ground surveys. This fall, CUPI switched the design to direct-drive joints, with three motors per leg and 18 total. The design is about 7.5 kg. This version hasn't been built yet.",
+      "For now, we're testing the walking controller in simulation on the DGX Spark we share with CUPI. Training runs 128 simulated robots at once.",
+      "In early tests, the robot finished a 20-second walk about 15 cm off target. CUPI added a reference robot, called the 'ghost,' that follows the requested path exactly. During training, the walking controller gets feedback on its distance from that reference and is rewarded for staying close.",
+      "The last run in the chart below had a median position error of 0.57 mm after 20 seconds, at a walking speed of 5 cm/s. These tests use exact position information from the simulator, so that number shouldn't be read as real-world navigation accuracy.",
+      { img: '/blog/hexapod-ghost-gap.svg', max: 668, alt: 'Line chart on a log scale. The median distance from the ghost after a 20-second walk starts at 152 mm with no ghost, then falls to 43, 14, 0.39, and 0.57 mm over four more training runs.', caption: 'Median position error after a 20-second walk, across five simulation training runs.' },
+      "We also tested what happens when the robot is pushed off a ledge. In this simulation, it lands upside down and continues walking.",
+      { video: '/projects/hexapod-walk.mp4', poster: '/projects/hexapod-walk.webp', max: 460, alt: 'In simulation, the hexapod is pushed off a ledge, lands upside down, and keeps walking.', caption: 'Testing the controller after a fall in simulation.' },
+      "CUPI has another version walking at up to 15 cm/s in eight directions in its CPU simulator. That version is still under review. There are more checks to run, including the full test suite, faster turns, and rough ground. We also need to build the robot and see how much of the simulation work transfers to hardware.",
     ],
     links: [
       { label: 'Explore the hexapod in 3D', href: '#/sensors/hexapod' },
@@ -43,6 +47,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: 'summer-spotlight-suchit-basineni',
+    author: 'Suchit Basineni',
     kind: 'blog',
     date: 'August 2026',
     tag: 'Summer Spotlight',
@@ -63,6 +68,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: 'summer-spotlight-orion-hoch',
+    author: 'Orion Hoch',
     kind: 'blog',
     date: 'August 2026',
     tag: 'Summer Spotlight',
@@ -88,6 +94,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: 'summer-spotlight-evelyn-keefe',
+    author: 'Evelyn Keefe',
     kind: 'blog',
     date: 'August 2026',
     tag: 'Summer Spotlight',

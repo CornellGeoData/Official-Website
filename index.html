@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="theme-color" content="#0e141c" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Cornell GeoData: Cornell University Project Team</title>
     <meta name="description" content="Cornell student project team building low-cost environmental instruments: 3D-printed weather stations, a Cayuga Lake buoy, an atmospheric tethersonde, and soil-moisture nodes that ground-truth NASA's NISAR satellite." />
@@ -30,16 +31,14 @@
         ]
       }
     </script>
-    <link rel="preload" href="/fonts/intan.otf" as="font" crossorigin />
-    <link rel="preload" href="/fonts/resiple.ttf" as="font" crossorigin />
-    <link rel="preload" href="/fonts/manti-sans-bold.otf" as="font" crossorigin />
+    <link rel="preload" href="/fonts/intan.woff2" as="font" crossorigin />
+    <link rel="preload" href="/fonts/resiple.woff2" as="font" crossorigin />
+    <link rel="preload" href="/fonts/manti-sans-bold.woff2" as="font" crossorigin />
     <!-- earth texture downloads alongside the three.js chunk instead of after
          it; crossorigin matches THREE.ImageLoader's anonymous request so the
-         preload actually hits cache. Home page only, and the aspect clause
-         approximates the hero's own test (Globe.tsx): in a tall window the globe
-         would reach the copy, so it is not drawn and these 686KB would be wasted. -->
+         preload actually hits cache. Home page only. The widths match isSmallScreen in dive.ts. -->
     <script>
-      if (!location.hash.startsWith('#/')) document.write('<link rel="preload" href="/earth-4k.webp" as="image" crossorigin media="(min-width: 721px) and (min-aspect-ratio: 5/4)" />');
+      if (!location.hash.startsWith('#/') && !navigator.connection?.saveData) document.write('<link rel="preload" href="/earth-4k.webp" as="image" crossorigin media="(min-width: 1101px)" /><link rel="preload" href="/earth-2k.webp" as="image" crossorigin media="(max-width: 1100px)" />');
     </script>
   </head>
   <body>

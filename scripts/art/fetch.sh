@@ -25,3 +25,4 @@ python3 -I "$HERE/art_region.py" dem/region_dem.tiff "$PUB" art  # public/art/re
 python3 -I "$HERE/art_earth.py" dem/A1.jpg dem/B1.jpg "$PUB/.."     # public/art/earth-ne.webp and earth-ny.webp
 node "$HERE/publish.mjs" art "$PUB"                         # public/art/<team>.avif and .webp
 node "$HERE/publish.mjs" art "$PUB" --mobile                 # public/art/subteams-mobile.webp
+node "$HERE/phone-art.mjs" "$PUB/.."                         # public/earth-2k.webp and public/art/*-phone.webp

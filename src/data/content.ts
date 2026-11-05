@@ -43,7 +43,7 @@ export const PROJECTS: Project[] = [
     tag: 'Water',
     tagColor: '#2e6fc9',
     title: 'Cayuga Lake Buoy',
-    body: 'A refitted research buoy measuring the lake and the air above it.',
+    body: 'Refitting a research buoy to measure water quality and weather on Cayuga Lake.',
     photo: '/projects/sensors-lake.webp',
   },
   {
@@ -71,7 +71,7 @@ export const PROJECTS: Project[] = [
     tag: 'Tech x CUPI Partnership',
     tagColor: '#c92556',
     title: 'LiDAR Hexapod',
-    body: 'A walking LiDAR robot for ground surveys, built with Cornell Physical Intelligence.',
+    body: 'Developing a LiDAR survey robot with Cornell Physical Intelligence. Its walking controller is being tested in simulation.',
     photo: '/projects/hexapod-walk.webp',
     video: { src: '/projects/hexapod-walk.mp4', label: "In simulation, the hexapod is pushed off a ledge, lands upside down, and keeps walking." },
     photoAspect: '3/2',
@@ -101,7 +101,7 @@ export const PARTNERS = [
 // opens that level on its donate page.
 export const CROWDFUNDING = {
   url: 'https://crowdfunding.cornell.edu/project/50966',
-  goal: 5000,
+  goal: 7000,
   end: '2026-12-05T00:00:00-05:00',
   ticks: [
     { amount: 20, lvid: 142209, icon: 'chip', does: 'buys a circuit sensor' },

@@ -5,7 +5,7 @@ import { PROJECTS } from '../../data/content';
 import type { Project } from '../../data/content';
 import { LoopVideo } from '../LoopVideo';
 import { onSmoothScroll } from './smoothScroll';
-import { ITHACA, REGION, altitude, diveAt, regionFrame, rotated } from './dive';
+import { ITHACA, REGION, altitude, diveAt, isSmallScreen, regionFrame, rotated } from './dive';
 
 // The home page under the hero, on two maps of the real terrain (USGS 3DEP elevation, see
 // public/art). The globe's zoom lands on all the Finger Lakes, north up, then drops to the north end of
@@ -67,7 +67,12 @@ function Chapter({ project, onFocus }: { project: Project; onFocus: () => void }
       <div className={`chapter-media map-frame${tall ? ' chapter-media-tall' : ''}`}>
         {project.video && project.photo
           ? <LoopVideo src={project.video.src} poster={project.photo} label={project.video.label} style={media} />
-          : <img loading="lazy" decoding="async" src={project.photo} alt={project.title} style={{ display: 'block', width: '100%', ...media }} />}
+          : (
+            <picture>
+              {import.meta.env.PROD && <source media="(max-width: 720px)" srcSet={project.photo?.replace('.webp', '-800.webp')} />}
+              <img loading="lazy" decoding="async" src={project.photo} alt={project.title} style={{ display: 'block', width: '100%', ...media }} />
+            </picture>
+          )}
       </div>
     </article>
   );
@@ -86,7 +91,17 @@ export function Descent({ children }: { children: ReactNode }) {
   const starRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const small = isSmallScreen();
+    // A phone holds off on the maps until the first scroll. Nobody sees them before then, and the hero shouldn't wait on them.
+    let mapsLoaded = false;
+    const loadMaps = () => {
+      if (mapsLoaded) return;
+      mapsLoaded = true;
+      imgRef.current!.src = `/art/terrain${small ? '-phone' : ''}.webp`;
+      regionRef.current!.src = `/art/region${small ? '-phone' : ''}.webp`;
+    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { loadMaps(); return; }
+    if (!small) loadMaps();
     const map = mapRef.current!, img = imgRef.current!, region = regionRef.current!, veil = veilRef.current!, fade = fadeRef.current!, labels = labelsRef.current!, star = starRef.current!, list = chaptersRef.current!, root = rootRef.current!, closing = closingRef.current!;
     const chapters = [...list.querySelectorAll<HTMLElement>('.chapter')];
     const stacked = window.matchMedia('(max-width: 1100px)');
@@ -133,21 +148,27 @@ export function Descent({ children }: { children: ReactNode }) {
         const p = rotated(px, py, angle);
         return `translate3d(${(ox + p.x * sc).toFixed(1)}px,${(oy + p.y * sc).toFixed(1)}px,0)`;
       };
-      img.style.transform = `${place(0, 0)} rotate(${angle.toFixed(4)}rad) scale(${sc.toFixed(4)})`;
+      // Phones lay the maps out at 40% (see .terrain img), so scale back up by the same amount.
+      // plenty of decimals: far out, these scales are tiny, and rounding them makes the map step in slow drags
+      const box = stacked.matches ? 2.5 : 1;
+      img.style.transform = `${place(0, 0)} rotate(${angle.toFixed(6)}rad) scale(${(sc * box).toFixed(7)})`;
       img.style.opacity = String(ease(clamp((zz - 0.3) / 0.4)));
-      region.style.transform = `${place(REGION.x, REGION.y)} rotate(${(angle + REGION.turn).toFixed(4)}rad) scale(${(sc * REGION.scale).toFixed(4)})`;
+      region.style.transform = `${place(REGION.x, REGION.y)} rotate(${(angle + REGION.turn).toFixed(6)}rad) scale(${(sc * REGION.scale * box).toFixed(7)})`;
       // gone once the lake map fills the frame: this close its pixels would show as blur at the edges
       region.style.opacity = String(mapIn * (1 - ease(clamp((zz - 0.6) / 0.4))));
       star.style.transform = place(CORNELL.x, CORNELL.y);
       // Phones reveal Cornell while approaching the south end, before the closing statement.
       star.style.opacity = String(stacked.matches ? zz * ease(clamp((cam.t - 0.7) / 0.15)) : zz * (1 - cam.inStage) * ease(clamp((cam.t - 0.8) / 0.2)));
-      labels.style.opacity = String(ease(clamp((dive - 0.9) / 0.1)) * (1 - clamp(zz * 4)));
-      LABELS.forEach((l, i) => {
+      const labelsIn = ease(clamp((dive - 0.9) / 0.1)) * (1 - clamp(zz * 4));
+      labels.style.opacity = String(labelsIn);
+      labels.style.visibility = labelsIn ? 'visible' : 'hidden';
+      if (labelsIn) LABELS.forEach((l, i) => {
         const label = labels.children[i] as HTMLElement;
         label.style.transform = place(l.x, l.y);
       });
     };
     return onSmoothScroll((y) => {
+      if (y > 0) loadMaps();
       const vh = map.clientHeight, now = window.scrollY;
       const top = list.getBoundingClientRect().top + now, end = top + list.offsetHeight - vh;
       const hero = root.previousElementSibling as HTMLElement;
@@ -192,8 +213,8 @@ export function Descent({ children }: { children: ReactNode }) {
     <div ref={rootRef} className="descent">
       <div ref={mapRef} className="terrain" aria-hidden="true">
         <div ref={veilRef} className="terrain-veil" />
-        <img ref={regionRef} className="terrain-region" src="/art/region.webp" alt="" width={2700} height={1700} decoding="async" />
-        <img ref={imgRef} src="/art/terrain.webp" alt="" width={MAP_W} height={MAP_H} decoding="async" />
+        <img ref={regionRef} className="terrain-region" alt="" width={2700} height={1700} decoding="async" />
+        <img ref={imgRef} alt="" width={MAP_W} height={MAP_H} decoding="async" />
         <div ref={fadeRef} className="terrain-fade" />
         <div ref={labelsRef} className="map-labels">
           {LABELS.map((l) => (

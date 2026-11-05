@@ -1,20 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import Sky from './Sky';
 import { onSmoothScroll } from './smoothScroll';
-import { ITHACA_LATLON, diveAt } from './dive';
+import { ITHACA_LATLON, diveAt, isSmallScreen } from './dive';
+
+// A phone that runs out of memory kills the tab and then reloads it, which would crash the same way, so a load
+// that was never put away cleanly died, and the reload gets the still. So do phones that say they are short on
+// memory, and anyone asking to save data.
+const RUN = 'geodata:globe-running';
+const mark = (running: boolean) => { try { sessionStorage.setItem(RUN, running ? '1' : '0'); } catch { /* private mode: no safety net */ } };
+function shouldSkipGlobe() {
+  const { deviceMemory, connection } = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  if (connection?.saveData || (isSmallScreen() && deviceMemory !== undefined && deviceMemory < 3)) return true;
+  try { return sessionStorage.getItem(RUN) === '1'; } catch { return false; }
+}
 
 export default function Globe() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pinRef = useRef<HTMLDivElement | null>(null);
   // neither WebGL nor a 2D canvas: swap the canvas for a pre-rendered still
-  const [noWebGL, setNoWebGL] = useState(false);
+  const [noWebGL, setNoWebGL] = useState(shouldSkipGlobe);
   // the hero stays pinned while the first stretch of scroll falls toward Ithaca,
   // fading out the copy and stars, until the terrain map takes over
   const trackRef = useRef<HTMLDivElement | null>(null);
   const copyRef = useRef<HTMLDivElement | null>(null);
   const skyRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLAnchorElement | null>(null);
-  const engineRef = useRef<{ zoom?: number } | undefined>(undefined);
+  const engineRef = useRef<{ zoom?: number; draw?: () => void } | undefined>(undefined);
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     return onSmoothScroll((y) => {
@@ -27,11 +38,32 @@ export default function Globe() {
       scrollRef.current!.style.opacity = String(Math.max(0, 1 - p * 5));
       scrollRef.current!.inert = p >= 0.2;
       skyRef.current!.style.opacity = String(Math.max(0, 1 - p * 1.4));
-      if (engineRef.current) engineRef.current.zoom = diveAt(y, pin);
+      if (engineRef.current) { engineRef.current.zoom = diveAt(y, pin); engineRef.current.draw?.(); }
     });
   }, []);
 
   useEffect(() => {
+    if (noWebGL) {
+      // Someone reloading by hand gets the globe again, which also frees a duplicated tab that copied the flag.
+      // A killed tab never gets this far, so the system's own reload stays on the still.
+      const retry = () => mark(false);
+      window.addEventListener('pagehide', retry);
+      return () => window.removeEventListener('pagehide', retry);
+    }
+    const onVisibility = () => mark(!document.hidden);
+    const onHide = () => mark(false);
+    mark(!document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onHide);
+      mark(false);
+    };
+  }, [noWebGL]);
+
+  useEffect(() => {
+    if (noWebGL) return;
     // dynamic import keeps three.js out of the initial bundle - the hero copy
     // paints immediately and the globe streams in behind it
     let engine: { unmount(): void; project(lat: number, lon: number): { x: number; y: number; visible: boolean } | null; zoom?: number } | undefined;
@@ -58,6 +90,8 @@ export default function Globe() {
       // still image is only for browsers that refuse that too
       e.mount({ canvasEl, onNoWebGL: () => {
         e.unmount();
+        // ray casting per pixel in JS is for desktops with WebGL turned off, not a phone that just ran out of memory
+        if (e.small) { setNoWebGL(true); return; }
         import('./globe2d').then((m) => {
           if (cancelled) return;
           const g = new m.Globe2D(onFrame);
@@ -67,12 +101,12 @@ export default function Globe() {
       } });
     });
     return () => { cancelled = true; engine?.unmount(); engineRef.current = undefined; };
-  }, []);
+  }, [noWebGL]);
 
   return (
     <div ref={trackRef} className="hero-track">
     <section className="globe-sticky" style={{ width: '100%', overflow: 'hidden' }}>
-      {/* stars and comets, behind the earth */}
+      {/* a still star field behind the earth */}
       <div ref={skyRef} style={{ position: 'absolute', inset: 0 }}><Sky /></div>
       {!noWebGL && <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />}
       {!noWebGL && (
@@ -86,11 +120,12 @@ export default function Globe() {
       <div ref={copyRef} className="hero-panel" style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: 'min(560px,50%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 0 0 clamp(24px,5vw,72px)', zIndex: 10, pointerEvents: 'none' }}>
         <h1 className="hero-title" style={{ fontFamily: "'Intan',sans-serif", fontWeight: 700, fontSize: 'clamp(60px,8vw,120px)', lineHeight: 0.95, letterSpacing: '-0.03em', margin: '0 0 -0.19em -0.045em' }}>Geo<span style={{ color: '#086727' }}>Data</span></h1>
         <div className="hero-subtitle" style={{ fontFamily: "'Resiple',sans-serif", fontSize: 'clamp(16px,1.55vw,20px)', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: '#4fae7d', marginTop: 26, textWrap: 'balance' }}>Cornell University Project Team</div>
-        <div className="hero-desktop-action" style={{ marginTop: 34 }}>
-          <a href="#support" style={{ display: 'inline-block', padding: '14px 28px', borderRadius: 999, background: '#086727', color: '#eaf2ee', fontWeight: 700, fontSize: 17.5, fontFamily: "'Resiple',sans-serif", pointerEvents: 'auto' }}>Support the team</a>
+        <p className="hero-mission">We build instruments to study the Finger Lakes.</p>
+        <div className="hero-desktop-action" style={{ marginTop: 26 }}>
+          <a href="#projects" style={{ display: 'inline-block', padding: '14px 28px', borderRadius: 999, background: '#086727', color: '#eaf2ee', fontWeight: 700, fontSize: 17.5, fontFamily: "'Resiple',sans-serif", pointerEvents: 'auto' }}>Explore our projects</a>
         </div>
       </div>
-      <a ref={scrollRef} className="hero-scroll" href="#finger-lakes">Explore our work <span aria-hidden="true">↓</span></a>
+      <a ref={scrollRef} className="hero-scroll" href="#finger-lakes">Scroll to the Finger Lakes <span aria-hidden="true">↓</span></a>
     </section>
     </div>
   );
