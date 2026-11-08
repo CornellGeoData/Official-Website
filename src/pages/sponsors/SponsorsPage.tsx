@@ -6,7 +6,9 @@ import { SPONSOR_PACKET_PDF, TIERS, ALUMNI } from '../../data/content';
 
 // Keep the WebP page previews in sync with public/sponsorship/packet.pdf.
 const PACKET_PAGE_COUNT = 5;
-const packetPageSrc = (n: number) => `/sponsorship/page-${String(n + 1).padStart(2, '0')}.webp`;
+// ponytail: ?v= dodges the 2025-26 previews Railway's edge cached under these names
+// (old 30-day header). Bump it if the edge ever serves stale pages again.
+const packetPageSrc = (n: number) => `/sponsorship/page-${String(n + 1).padStart(2, '0')}.webp?v=2026-27`;
 
 function PacketViewer() {
   const [page, setPage] = useState(0);

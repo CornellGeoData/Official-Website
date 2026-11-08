@@ -75,7 +75,7 @@ export function MembersPage() {
                       style={{ position: 'relative', display: 'block', width: '100%', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', '--tile-color': color } as React.CSSProperties}
                     >
                       {m.photo ? (
-                        <img loading="lazy" decoding="async" src={m.photo} srcSet={import.meta.env.PROD ? `${m.photo.replace('.webp', '-600.webp')} 600w, ${m.photo} 1400w` : undefined} sizes="(max-width: 720px) 50vw, 240px" alt={m.name} draggable={false} style={{ display: 'block', width: '100%', aspectRatio: '1/1', objectFit: 'cover' }} />
+                        <img loading="lazy" decoding="async" src={`${m.photo}?v=2026-27`} srcSet={import.meta.env.PROD ? `${m.photo.replace('.webp', '-600.webp')}?v=2026-27 600w, ${m.photo}?v=2026-27 1400w` : undefined} sizes="(max-width: 720px) 50vw, 240px" alt={m.name} draggable={false} style={{ display: 'block', width: '100%', aspectRatio: '1/1', objectFit: 'cover' }} />
                       ) : (
                         <div aria-hidden="true" style={{ display: 'grid', placeItems: 'center', aspectRatio: '1/1', background: '#1a2430', color: '#52636f' }}>
                           <svg width="48%" height="48%" viewBox="0 0 64 64" fill="currentColor">
