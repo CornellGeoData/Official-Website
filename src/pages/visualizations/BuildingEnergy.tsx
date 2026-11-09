@@ -28,7 +28,7 @@ interface Building {
 }
 interface EnergyData { start: string; n: number; temp: Series; models: Model[]; buildings: Building[] }
 
-const ATTRIBUTION = 'Imagery: Esri, Maxar, Earthstar Geographics · Footprints: © OpenStreetMap contributors';
+const ATTRIBUTION = 'Imagery: Esri, Maxar, Earthstar Geographics. Footprints: © OpenStreetMap contributors';
 const INK = '#e6ecf0';
 const DIM = '#a9bcc6';
 const MUTED = '#7f909b';
@@ -225,7 +225,7 @@ export default function BuildingEnergy() {
           <div style={{ fontWeight: 700 }}>{hovered.name}</div>
           <div style={{ color: DIM, ...NUM }}>
             {errOf(hovered, day) == null ? 'No meter data this day'
-              : `Actual ${fmtKW(hovered.y[day])} kW · forecast ${fmtKW(hovered.p[model][day])} kW (${pct(errOf(hovered, day)!)})`}
+              : `Actual ${fmtKW(hovered.y[day])} kW, forecast ${fmtKW(hovered.p[model][day])} kW (${pct(errOf(hovered, day)!)})`}
           </div>
         </div>
       )}
@@ -273,9 +273,9 @@ export default function BuildingEnergy() {
           ...(wide ? { left: '50%', transform: 'translateX(-50%)', width: 'min(720px, calc(100% - 520px))' } : { left: edge, right: edgeR }),
         }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? ` · ${Math.round(t)} °F` : ''}</span>
+            <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
             <span style={{ fontSize: 12, color: DIM, ...NUM }}>
-              {totals ? `Campus: actual ${(totals.ya / 1000).toFixed(2)} MW · forecast ${(totals.pa / 1000).toFixed(2)} MW (${pct(((totals.pa - totals.ya) / totals.ya) * 100)})` : 'No meter data this day'}
+              {totals ? `Campus: actual ${(totals.ya / 1000).toFixed(2)} MW, forecast ${(totals.pa / 1000).toFixed(2)} MW (${pct(((totals.pa - totals.ya) / totals.ya) * 100)})` : 'No meter data this day'}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -318,7 +318,7 @@ export default function BuildingEnergy() {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
             <div>
               <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15 }}>{sel.name}</div>
-              <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>{sel.type} · averages {fmtKW(sel.mean)}{sel.mean >= 1000 ? '' : ' kW'}</div>
+              <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>{sel.type}, averages {fmtKW(sel.mean)}{sel.mean >= 1000 ? '' : ' kW'}</div>
             </div>
             <button onClick={() => select(null, false)} aria-label="Close building details" style={{ ...BTN, width: 38, height: 38, padding: 11, flex: 'none' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
@@ -327,7 +327,7 @@ export default function BuildingEnergy() {
           {small && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <button onClick={() => setDay((d) => Math.max(0, d - 1))} aria-label="Previous day" style={{ ...BTN, height: 34, padding: '0 12px' }}>‹</button>
-              <span style={{ fontSize: 14 }}>{fmtLong(ready.start, day)}{t != null ? ` · ${Math.round(t)} °F` : ''}</span>
+              <span style={{ fontSize: 14 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
               <button onClick={() => setDay((d) => Math.min(ready.n - 1, d + 1))} aria-label="Next day" style={{ ...BTN, height: 34, padding: '0 12px' }}>›</button>
             </div>
           )}
@@ -461,7 +461,7 @@ function Stats({ b, day, model, start, err }: { b: Building; day: number; model:
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: LINE, border: `1px solid ${LINE}` }}>
       <div style={cell}><span style={LABEL}>Actual</span><span style={v}>{fmtKW(b.y[day])}</span><span style={s}>{fmtShort(start, day)}, kW</span></div>
       <div style={cell}><span style={LABEL}>Forecast</span><span style={v}>{fmtKW(b.p[model.key]?.[day])}</span>
-        <span style={s}>{err == null ? 'kW' : `${pct(err)}${lo != null && hi != null ? ` · ${fmtKW(lo)}–${fmtKW(hi)}` : ''}`}</span></div>
+        <span style={s}>{err == null ? 'kW' : `${pct(err)}${lo != null && hi != null ? `, ${fmtKW(lo)}–${fmtKW(hi)}` : ''}`}</span></div>
       <div style={cell}><span style={LABEL}>Year error</span><span style={v}>{w == null ? '–' : `${w.toFixed(1)}%`}</span><span style={s}>WAPE, {model.label}</span></div>
     </div>
   );
