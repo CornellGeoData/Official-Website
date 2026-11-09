@@ -14,6 +14,7 @@ forecasts are available in your browser, with no installation or account needed.
 | [Sensor Map](https://cornellgeodata.com/#/sensors/map) | Select a station to see available air-quality, soil-moisture, or regional weather readings. |
 | [Weather Forecast](https://cornellgeodata.com/#/sensors/forecast) | Compare observed radar with local and NOAA forecasts, explore weather layers, and inspect values at a location. |
 | [Sensor Charts](https://cornellgeodata.com/#/sensors/air) | Explore readings over a day, week, month, or the available archive, and download station data as CSV. |
+| [Building Energy](https://cornellgeodata.com/#/sensors/energy) | Step through a year of daily electricity forecasts for campus buildings, see where they ran high or low, and compare a building's forecast with its metered load. |
 | [Ithaca LiDAR](https://cornellgeodata.com/#/sensors/lidar) | Explore a 3D survey of central Ithaca, filter predicted surface classes, and inspect individual points. |
 | [Hexapod](https://cornellgeodata.com/#/sensors/hexapod) | Explore the Hexapod MKII, adjust its joints, and inspect the moving linkages. |
 
@@ -81,6 +82,7 @@ Page components stay together by feature:
 | Member and blog pages | [MembersPage.tsx](src/pages/MembersPage.tsx), [PostsPage.tsx](src/pages/PostsPage.tsx) |
 | Projects, posts, roster, and crowdfunding details | [src/data/](src/data/) |
 | Shared fonts, colors, and styles | [src/styles/](src/styles/) |
+| Building energy forecasts and footprints | [BuildingEnergy.tsx](src/pages/visualizations/BuildingEnergy.tsx), data in [public/energy/](public/energy/) |
 | Ithaca LiDAR viewer | [src/viewers/lidar/](src/viewers/lidar/) |
 | Interactive hexapod viewer | [src/viewers/hexapod/](src/viewers/hexapod/) |
 | Images, fonts, sponsorship packet, and LiDAR data | [public/](public/) |

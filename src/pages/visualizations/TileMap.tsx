@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { TILE, lonToX, latToY, xToLon, yToLat, type RasterTiles } from './mercator';
 import { AIR, SOIL, WEATHER, type MapSite } from './sensorData';
 import { RESIPLE } from '../../styles/theme';
@@ -26,7 +27,7 @@ const easeInOut = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t 
 
 export interface MapTarget { lat: number; lon: number; zoom: number; nonce: number }
 
-export default function TileMap({ sites, selectedIds, onSelect, target, initial, onView, dur = 1400, tileUrl = TILE_URL, attribution = ATTRIBUTION, minZ = MIN_Z, maxZ = MAX_Z, overlays, gridBounds, onPick, showLegend }: {
+export default function TileMap({ sites, selectedIds, onSelect, target, initial, onView, dur = 1400, tileUrl = TILE_URL, attribution = ATTRIBUTION, minZ = MIN_Z, maxZ = MAX_Z, overlays, gridBounds, onPick, showLegend, vectorLayer }: {
   sites: MapSite[];
   selectedIds: string[];
   onSelect: (id: string) => void;
@@ -51,6 +52,9 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
   onPick?: (lat: number, lon: number) => void;
   // the sensor legend only decodes pin families; a probe pin isn't one
   showLegend?: boolean;
+  // vector drawing above the imagery (Building Energy's footprints): gets a
+  // lat/lon -> screen-pixel projection for the current view and the map size
+  vectorLayer?: (project: (lat: number, lon: number) => { x: number; y: number }, size: { w: number; h: number }) => ReactNode;
 }) {
   const small = useCompactViewport();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -259,6 +263,8 @@ export default function TileMap({ sites, selectedIds, onSelect, target, initial,
       {layer(Z)}
 
       {overlays?.map((o) => <WeatherOverlay key={o.url} overlay={o} view={view} size={size} />)}
+
+      {vectorLayer && w > 0 && vectorLayer((lat, lon) => ({ x: (lonToX(lon, Z) - cx) * scale + midX, y: (latToY(lat, Z) - cy) * scale + h / 2 }), size)}
 
       {/* Jefferson-style markers: the color is the information - a solid dot
           per family, hollow for retired, no names printed on the map. The
