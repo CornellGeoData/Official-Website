@@ -268,7 +268,14 @@ export default function BuildingEnergy() {
           ...PANEL, position: 'absolute', zIndex: 2, bottom: small ? 'max(26px, calc(env(safe-area-inset-bottom) + 14px))' : 'max(34px, calc(env(safe-area-inset-bottom) + 22px))', padding: '10px 14px 12px', boxSizing: 'border-box', display: 'grid', gap: 8,
           ...(wide ? { left: '50%', transform: 'translateX(-50%)', width: 'min(720px, calc(100% - 520px))' } : { left: edge, right: small ? edgeR : `calc(${edgeR} + 100px)` }),
         }}>
-          <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '4px 12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
+            {/* key for the temperature strip under it */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: DIM }}>
+              <span aria-hidden="true" style={{ width: 4, height: 12, background: COLD_TONE }} />
+              Cold day: mean temperature 20 °F or below
+            </span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => { if (!playing && day >= ready.n - 1) setDay(0); setPlaying((p) => !p); }} aria-label={playing ? 'Pause' : 'Play'}
               style={{ ...BTN, width: 38, height: 38, padding: 0, display: 'grid', placeItems: 'center', flex: 'none' }}>
