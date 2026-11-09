@@ -114,6 +114,7 @@ export function MembersPage() {
           <p style={{ color: teamInk(selectedMember.subteam) }}>{selectedMember.role ?? (selectedMember.lead ? 'Subteam Lead' : selectedMember.badge && selectedMember.badge !== selectedMember.subteam ? `${selectedMember.subteam} & ${selectedMember.badge} teams` : teamLabel(selectedMember.subteam))}</p>
           <p>Major: {selectedMember.major || 'TBD'}</p>
           {selectedMember.graduationYear && <p>Graduation year: {selectedMember.graduationYear}</p>}
+          {selectedMember.funFact && <p>Fun fact: {selectedMember.funFact}</p>}
           <div className="member-contact-actions">
             {selectedMember.email ? <div className="member-contact-email">
               <a href={`mailto:${selectedMember.email}`}>{selectedMember.email}</a>

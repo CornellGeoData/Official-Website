@@ -382,5 +382,138 @@
     "major": "Biology & Society",
     "linkedin": "https://www.linkedin.com/in/sophie-j-wang/",
     "graduationYear": 2029
+  },
+  {
+    "name": "Hendry Xu",
+    "subteam": "Tech",
+    "photo": "",
+    "email": "qx235@cornell.edu",
+    "major": "Computer Science and Mathematics",
+    "linkedin": "https://www.linkedin.com/in/hendryxu/",
+    "github": "https://github.com/justanotherinternetguy",
+    "website": "https://internetguy.dev/",
+    "graduationYear": 2030,
+    "funFact": "I like making my own languages."
+  },
+  {
+    "name": "Vivian Huang",
+    "subteam": "Water",
+    "photo": "/members/vivian.webp",
+    "email": "vyh6@cornell.edu",
+    "major": "Environmental Engineering",
+    "linkedin": "https://www.linkedin.com/in/vivian-huang08",
+    "graduationYear": 2030,
+    "funFact": "Outside of class, I enjoy running, photography, exploring the outdoors, and training for my first triathlon!"
+  },
+  {
+    "name": "Erika Chiu",
+    "subteam": "Data",
+    "photo": "",
+    "email": "ec2232@cornell.edu",
+    "major": "Computer Science and Statistics",
+    "linkedin": "https://www.linkedin.com/in/erikachiu/",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Jason Zhang",
+    "subteam": "Tech",
+    "photo": "",
+    "email": "jz2532@cornell.edu",
+    "major": "Physics and Computer Science",
+    "linkedin": "https://www.linkedin.com/in/jason-zhang-b90b242a8/",
+    "website": "https://jzcpinfinity.github.io/index.html",
+    "websiteLabel": "jzcpinfinity.github.io",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Aayush Bansod",
+    "subteam": "Data",
+    "photo": "/members/aayush.webp",
+    "email": "amb749@cornell.edu",
+    "major": "Operations Research and Information Engineering",
+    "linkedin": "https://www.linkedin.com/in/aayush-bansod",
+    "github": "https://github.com/aayush-bansod",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Austin Hollasch",
+    "subteam": "Business",
+    "photo": "/members/austin.webp",
+    "email": "akh237@cornell.edu",
+    "major": "Operations Research and Information Engineering",
+    "linkedin": "https://www.linkedin.com/in/austin-hollasch-a7a772315",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Michelle Cheng",
+    "subteam": "Business",
+    "photo": "/members/michelle.webp",
+    "email": "mc3274@cornell.edu",
+    "major": "Food Science",
+    "linkedin": "https://www.linkedin.com/in/michelle-cheng3",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Joyce Tian",
+    "subteam": "Business",
+    "photo": "/members/joyce.webp",
+    "email": "jt998@cornell.edu",
+    "major": "Biometry & Statistics",
+    "linkedin": "https://www.linkedin.com/in/joyce-tian",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Lennox Schmid",
+    "subteam": "Data",
+    "photo": "/members/lennox.webp",
+    "email": "lls226@cornell.edu",
+    "major": "Mechanical Engineering",
+    "linkedin": "https://www.linkedin.com/in/lennox-schmid-6751a9338/",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Woodford Pollach",
+    "subteam": "Water",
+    "photo": "",
+    "email": "wmp49@cornell.edu",
+    "major": "Environmental Engineering",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Alex Yu",
+    "subteam": "Rock",
+    "photo": "/members/alex.webp",
+    "email": "ary28@cornell.edu",
+    "major": "Environment and Sustainability",
+    "linkedin": "https://www.linkedin.com/in/alexander-yu5678/",
+    "graduationYear": 2030,
+    "funFact": "I love plants, fungi, and how they relate to each other."
+  },
+  {
+    "name": "Iris Johnson",
+    "subteam": "Air",
+    "photo": "",
+    "email": "iaj23@cornell.edu",
+    "major": "Earth and Climate Sciences",
+    "linkedin": "https://www.linkedin.com/in/iris-johnson-091670397",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Anna Malikov",
+    "subteam": "Water",
+    "photo": "",
+    "email": "am3597@cornell.edu",
+    "major": "Biological Sciences",
+    "linkedin": "https://www.linkedin.com/in/anna-malikov-510475392/",
+    "graduationYear": 2030
+  },
+  {
+    "name": "Kim Garcia",
+    "subteam": "Water",
+    "photo": "",
+    "email": "kdg57@cornell.edu",
+    "major": "Environment and Sustainability & Landscape Architecture",
+    "graduationYear": 2030,
+    "funFact": "I once spent the same day for 48 hours by flying to another island for 30 mins that had a 24hr timezone difference (basically flew for 30 mins to the other side of the international date line)."
   }
 ]

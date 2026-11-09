@@ -15,6 +15,7 @@ export interface Member {
   github?: string;
   website?: string;
   websiteLabel?: string;
+  funFact?: string; // optional one-liner shown in the contact dialog
 }
 
 export interface Project {
