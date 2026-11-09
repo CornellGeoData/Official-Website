@@ -105,7 +105,6 @@ export default function BuildingEnergy() {
   const ready = typeof data === 'object' ? data : null;
   const buildings = ready?.buildings ?? [];
   const mapped = useMemo(() => buildings.filter((b) => b.shape), [buildings]);
-  const snaps = useMemo(() => (ready ? coldSnaps(ready.temp) : []), [ready]);
 
   // frame every footprint once the data and the window size are known
   const home = useMemo(() => {
@@ -145,16 +144,6 @@ export default function BuildingEnergy() {
     }
   };
 
-  const totals = useMemo(() => {
-    if (!ready) return null;
-    let ya = 0, pa = 0, n = 0;
-    for (const b of buildings) {
-      const y = b.y[day], p = b.p[model]?.[day];
-      if (y != null && p != null) { ya += y; pa += p; n++; }
-    }
-    return n ? { ya, pa, n } : null;
-  }, [ready, buildings, day, model]);
-
   if (!ready) {
     return (
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#0e141c', fontFamily: RESIPLE, color: DIM, padding: 24, textAlign: 'center' }}>
@@ -171,6 +160,13 @@ export default function BuildingEnergy() {
   const edgeR = 'max(12px, env(safe-area-inset-right))';
   const bottom = 'max(12px, env(safe-area-inset-bottom))';
   const wide = !small && window.innerWidth > 1100;
+  const aboutBtn = (
+    <button onClick={() => setAbout((v) => !v)} aria-expanded={about}
+      style={{ ...BTN, height: 38, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase', color: DIM, flex: 'none',
+        ...(small ? {} : { position: 'absolute', zIndex: 3, right: edgeR, bottom: 'max(34px, calc(env(safe-area-inset-bottom) + 22px))' }) }}>
+      About
+    </button>
+  );
 
   return (
     <div ref={rootRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', fontFamily: RESIPLE, color: INK, userSelect: 'none', WebkitUserSelect: 'none' }}>
@@ -241,27 +237,27 @@ export default function BuildingEnergy() {
             </select>
             <Chevron style={{ right: 12, top: 15 }} />
           </label>
-          <button onClick={() => setAbout((a) => !a)} aria-expanded={about} style={{ ...BTN, height: 38, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase', color: DIM }}>About</button>
         </div>
-        {about && (
-          <div style={{ ...PANEL, padding: 14, display: 'grid', gap: 9, fontSize: 13, lineHeight: 1.55, color: DIM, maxHeight: '55dvh', overflowY: 'auto', userSelect: 'text' }}>
+      </div>
+
+      {/* ---- about: button in the bottom-right corner (inside the timeline on phones) ---- */}
+      {!small && aboutBtn}
+      {about && (
+          <div style={{ ...PANEL, position: 'absolute', zIndex: 4, padding: 14, display: 'grid', gap: 9, fontSize: 13, lineHeight: 1.55, color: DIM, overflowY: 'auto', userSelect: 'text', boxSizing: 'border-box',
+            ...(small ? { left: edge, right: edgeR, top: 130, maxHeight: '55dvh' } : { right: edgeR, bottom: 'max(80px, calc(env(safe-area-inset-bottom) + 68px))', width: 360, maxHeight: 'calc(100dvh - 100px)' }) }}>
             <div style={{ color: INK, fontWeight: 700, fontSize: 15 }}>Campus building load forecasts</div>
             <p style={{ margin: 0 }}>Each building is shaded by how far the forecast for the selected day was from its metered electricity use. Blue means the forecast was too low, red means too high.</p>
             <p style={{ margin: 0 }}>Forecasts are backtests issued every 7 days from Aug 2025 to Jul 2026. For each day the map shows the most recent forecast, made 1 to 7 days ahead with the weather forecast available at the time. Ranges are 80% forecast intervals.</p>
-            <p style={{ margin: 0 }}>Load is the daily mean in kW. Temperature is the campus daily mean in °F; cold days average 20 °F or below.</p>
+            <p style={{ margin: 0 }}>Load is the daily mean in kW. The strip above the timeline shows the campus daily mean temperature in °F; days averaging 20 °F or below are highlighted.</p>
             <p style={{ margin: 0 }}>{mapped.length} buildings are matched to OpenStreetMap footprints. The other {buildings.length - mapped.length} have no footprint yet; find them with the search box.</p>
           </div>
-        )}
-      </div>
+      )}
 
       {/* ---- legend ---- */}
       {!small && (
-        <div style={{ ...PANEL, position: 'absolute', zIndex: 2, left: edge, ...(wide ? { bottom } : { top: about ? undefined : 120, bottom: about ? bottom : undefined }), padding: '10px 12px', width: 220, display: 'grid', gap: 6 }}>
-          <span style={LABEL}>Forecast vs actual</span>
+        <div style={{ ...PANEL, position: 'absolute', zIndex: 2, left: edge, ...(wide ? { bottom } : { top: 120 }), padding: '10px 12px', width: 220, display: 'grid', gap: 6 }}>
+          <span style={LABEL}>Forecast accuracy</span>
           <Ramp />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: DIM }}>
-            <span style={{ width: 12, height: 10, border: `1.5px dashed ${DIM}`, boxSizing: 'border-box' }} />No meter data that day
-          </div>
         </div>
       )}
 
@@ -270,14 +266,9 @@ export default function BuildingEnergy() {
         <div style={{
           // desktop: lifted clear of the imagery credit along the bottom-right edge
           ...PANEL, position: 'absolute', zIndex: 2, bottom: small ? 'max(26px, calc(env(safe-area-inset-bottom) + 14px))' : 'max(34px, calc(env(safe-area-inset-bottom) + 22px))', padding: '10px 14px 12px', boxSizing: 'border-box', display: 'grid', gap: 8,
-          ...(wide ? { left: '50%', transform: 'translateX(-50%)', width: 'min(720px, calc(100% - 520px))' } : { left: edge, right: edgeR }),
+          ...(wide ? { left: '50%', transform: 'translateX(-50%)', width: 'min(720px, calc(100% - 520px))' } : { left: edge, right: small ? edgeR : `calc(${edgeR} + 100px)` }),
         }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
-            <span style={{ fontSize: 12, color: DIM, ...NUM }}>
-              {totals ? `Campus: actual ${(totals.ya / 1000).toFixed(2)} MW, forecast ${(totals.pa / 1000).toFixed(2)} MW (${pct(((totals.pa - totals.ya) / totals.ya) * 100)})` : 'No meter data this day'}
-            </span>
-          </div>
+          <span style={{ fontSize: 17, fontWeight: 700 }}>{fmtLong(ready.start, day)}{t != null ? `, ${Math.round(t)} °F` : ''}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => { if (!playing && day >= ready.n - 1) setDay(0); setPlaying((p) => !p); }} aria-label={playing ? 'Pause' : 'Play'}
               style={{ ...BTN, width: 38, height: 38, padding: 0, display: 'grid', placeItems: 'center', flex: 'none' }}>
@@ -292,18 +283,12 @@ export default function BuildingEnergy() {
                 style={{ width: '100%', margin: '4px 0 0', accentColor: INK }} />
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: MUTED }}>
-            {small ? <div style={{ flex: '1 1 160px', display: 'grid', gap: 3 }}><Ramp /></div>
-              : <span>Strip: daily mean temperature, <span style={{ color: COLD_TONE }}>cold days ≤ 20 °F</span></span>}
-            <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {snaps.map(([a, b]) => (
-                <button key={a} onClick={() => { setPlaying(false); setDay(a); }}
-                  style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${LINE}`, background: 'transparent', color: DIM, fontFamily: RESIPLE, fontSize: 12, padding: '3px 8px' }}>
-                  {small ? fmtShort(ready.start, a) : `Cold snap ${fmtShort(ready.start, a)}${b > a ? `–${fmtShort(ready.start, b)}` : ''}`}
-                </button>
-              ))}
-            </span>
-          </div>
+          {small && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 3 }}><Ramp /></div>
+              {aboutBtn}
+            </div>
+          )}
         </div>
       )}
 
@@ -313,7 +298,7 @@ export default function BuildingEnergy() {
           ...PANEL, position: 'absolute', zIndex: 3, boxSizing: 'border-box', padding: 16, display: 'grid', gap: 14, overflowY: 'auto',
           ...(small
             ? { left: 0, right: 0, bottom: 0, maxHeight: '64dvh', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }
-            : { top: 68, right: edgeR, width: 430, maxHeight: wide ? 'calc(100dvh - 80px)' : 'calc(100dvh - 300px)' }),
+            : { top: 68, right: edgeR, width: 430, maxHeight: wide ? 'calc(100dvh - 140px)' : 'calc(100dvh - 300px)' }),
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
             <div>
