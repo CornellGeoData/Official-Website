@@ -7,7 +7,7 @@ export interface Visualization {
   hash: string; // deep link, e.g. #/sensors/map
 }
 
-// Order is display order, newest project first. Thumbnails are a frame from CUPI's own clip (hexapod) and
+// Order is display order. Thumbnails are a frame from CUPI's own clip (hexapod) and
 // U.S. government public-domain images on Wikimedia Commons:
 // finger-lakes: NASA, commons.wikimedia.org/wiki/File:New_York's_Finger_Lakes.jpg
 // great-lakes-cloud-streets: NASA GSFC, commons.wikimedia.org/wiki/File:Cloud_streets_and_ice_on_the_Great_Lakes_(false_color)_(MODIS_2018-01-11).jpg
@@ -17,18 +17,18 @@ export interface Visualization {
 // building-energy: a frame of the Building Energy stage itself (Esri imagery, OpenStreetMap footprints)
 export const VISUALIZATIONS: Visualization[] = [
   {
-    id: 'energy',
-    label: 'Building Energy',
-    blurb: 'How well can we forecast campus electricity use? Compare each building\'s daily load with forecasts made a week ahead, through a year that includes January\'s cold snaps.',
-    thumb: '/visualizations/building-energy.webp',
-    hash: '#/sensors/energy',
-  },
-  {
     id: 'hexapod',
     label: 'Hexapod',
     blurb: 'Explore the Hexapod MKII in 3D. Select a leg, adjust its joints, and inspect each part.',
     thumb: '/visualizations/hexapod-walk.webp',
     hash: '#/sensors/hexapod',
+  },
+  {
+    id: 'energy',
+    label: 'Building Energy',
+    blurb: 'How well can we forecast campus electricity use? Compare each building\'s daily load with forecasts made a week ahead, through a year that includes January\'s cold snaps.',
+    thumb: '/visualizations/building-energy.webp',
+    hash: '#/sensors/energy',
   },
   {
     id: 'map',
