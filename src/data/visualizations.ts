@@ -7,7 +7,7 @@ export interface Visualization {
   hash: string; // deep link, e.g. #/sensors/map
 }
 
-// Order is display order. Thumbnails are a frame from CUPI's own clip (hexapod) and
+// Order is display order, newest project first. Thumbnails are a frame from CUPI's own clip (hexapod) and
 // U.S. government public-domain images on Wikimedia Commons:
 // finger-lakes: NASA, commons.wikimedia.org/wiki/File:New_York's_Finger_Lakes.jpg
 // great-lakes-cloud-streets: NASA GSFC, commons.wikimedia.org/wiki/File:Cloud_streets_and_ice_on_the_Great_Lakes_(false_color)_(MODIS_2018-01-11).jpg
@@ -16,6 +16,13 @@ export interface Visualization {
 // weather-sensor: NOAA NSSL, commons.wikimedia.org/wiki/File:2020_CLAMPS_Norman_OK-7.jpg
 // building-energy: a frame of the Building Energy stage itself (Esri imagery, OpenStreetMap footprints)
 export const VISUALIZATIONS: Visualization[] = [
+  {
+    id: 'energy',
+    label: 'Building Energy',
+    blurb: 'How well can we forecast campus electricity use? Compare each building\'s daily load with forecasts made a week ahead, through a year that includes January\'s cold snaps.',
+    thumb: '/visualizations/building-energy.webp',
+    hash: '#/sensors/energy',
+  },
   {
     id: 'hexapod',
     label: 'Hexapod',
@@ -43,13 +50,6 @@ export const VISUALIZATIONS: Visualization[] = [
     blurb: 'How well did the models do? Compare what actually happened over Central New York against HRRR, GFS, and AIFS forecasts valid at the same hour.',
     thumb: '/visualizations/superstorm-model.webp',
     hash: '#/sensors/verify',
-  },
-  {
-    id: 'energy',
-    label: 'Building Energy',
-    blurb: 'How well can we forecast campus electricity use? Compare each building\'s daily load with forecasts made a week ahead, through a year that includes January\'s cold snaps.',
-    thumb: '/visualizations/building-energy.webp',
-    hash: '#/sensors/energy',
   },
   {
     id: 'lidar',
