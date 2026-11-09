@@ -232,10 +232,10 @@ export default function BuildingEnergy() {
         <div style={{ display: 'flex', gap: 8 }}>
           <label style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Forecast model</span>
-            <select value={model} onChange={(e) => setModel(e.target.value)} style={{ ...BTN, width: '100%', height: 38, fontSize: 14, paddingRight: 30, appearance: 'none' }}>
+            <select value={model} onChange={(e) => setModel(e.target.value)} style={{ ...BTN, width: '100%', height: 38, fontSize: 14 }}>
               {ready.models.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
             </select>
-            <Chevron style={{ right: 12, top: 15 }} />
+            {/* the dropdown arrow comes from the site-wide select style in index.css */}
           </label>
         </div>
       </div>
